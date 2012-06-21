@@ -169,6 +169,14 @@ sub diag {
     }
 }
 
+sub note {
+    if (-t STDOUT) {
+        Test::More->builder->note(Term::ANSIColor::colored [$_[1]], $_[2]);
+    } else {
+        Test::More->builder->note($_[2]);
+    }
+}
+
 package Test::X1::Context;
 
 sub new {
