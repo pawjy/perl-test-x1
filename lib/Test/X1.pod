@@ -1,0 +1,71 @@
+=head1 NAME
+
+Test::X1 - A test manager
+
+=head1 SYNOPSIS
+
+  use Test::X1;
+  use Test::More;
+  
+  test {
+      my $c = shift;
+      ok 1;
+      ok 2;
+      $c->done;
+  };
+  
+  test {
+      my $c = shift;
+      my $timer; $timer = AnyEvent->timer(
+          after => 2,
+          cb => sub {
+              test {
+                  ok 2;
+                  is 3, 0;
+                  undef $timer;
+                  $c->done;
+              } $c;
+          },
+      );
+      ok 1;
+  } n => 3, name => ['anyevent', 'callback'];
+  
+  run_tests;
+  
+  # ok 1 - (1).1
+  # ok 2 - (1).2
+  # ok 3 - anyevent.callback (2).1
+  # ok 4 - anyevent.callback (2).2
+  not ok 5 - anyevent.callback (2).3
+  #   Failed test 'anyevent.callback (2).3'
+  #   at lib/Test/X1.pod line 24.
+  #          got: '3'
+  #     expected: '0'
+  # anyevent.callback (2): 1 test failed
+  1..5
+  # Looks like you failed 1 test of 5.
+
+=head1 DESCRIPTION
+
+XXX
+
+=head1 USAGE
+
+XXX
+
+=head2 Subclassing
+
+XXX
+
+=head1 AUTHOR
+
+Wakaba <wakabatan@hatena.ne.jp>.
+
+=head1 LICENSE
+
+Copyright 2012 Hatena <http://www.hatena.ne.jp/>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut

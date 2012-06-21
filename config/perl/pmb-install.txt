@@ -1,0 +1,8 @@
+File::ShareDir::Install~0.04
+inc::latest~0.40
+AE
+Exporter::Lite~0.02
+Test::Builder~0.98
+Term::ANSIColor~3.02
+ExtUtils::ParseXS~3.15
+Carp~1.26
