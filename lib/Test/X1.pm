@@ -258,6 +258,7 @@ sub DESTROY {
     unless ($self->{done}) {
         die "Can't continue test anymore (an exception is thrown before the test?)\n" unless $self->{cv};
 
+        Test::More::is(undef, 'done', $self->test_name . ' $c->done');
         $self->diag(undef, "\$c->done is not invoked (or |die|d within test?)");
         $self->done;
     }
