@@ -86,7 +86,13 @@ sub run_tests {
         local $Test::Builder::Level = $Test::Builder::Level + 1;
 
         if ($self->{test_context}) {
-            $name = $self->{test_context}->next_subtest_name unless defined $name;
+            if (defined $name) {
+                $name = join ' ', 
+                    $self->{test_context}->next_subtest_name,
+                    ref $name eq 'ARRAY' ? @$name : $name;
+            } else {
+                $name = $self->{test_context}->next_subtest_name;
+            }
             $self->{test_context}->{done_tests}++;
         }
         
