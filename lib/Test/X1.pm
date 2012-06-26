@@ -77,9 +77,32 @@ sub define_test {
     push @{$self->{tests}}, [$code, \%args];
 }
 
+sub test_block_skip_regexp {
+    my $self = shift;
+    return $self->{test_block_skip_regexp}
+        if exists $self->{test_block_skip_regexp};
+    my $regexp = $ENV{TEST_BLOCK_SKIP};
+    if (defined $regexp) {
+        $self->{test_block_skip_regexp} = qr/$regexp/;
+    } else {
+        $self->{test_block_skip_regexp} = undef;
+    }
+}
+
 sub execute_with_context {
-    local $_[0]->{test_context} = $_[2];
-    return $_[1]->();
+    my ($self, $code, $context, %args) = @_;
+    local $self->{test_context} = $context;
+    local $context->{test_block_name} = $args{name};
+    if ($args{name}) {
+        my $skip = $self->test_block_skip_regexp;
+        if ($skip and $args{name} =~ /$skip/) {
+            Test::More->builder->skip;
+            $self->diag(undef, sprintf '%s.%s - subtests skipped.',
+                                   $context->test_name, $args{name});
+            return;
+        }
+    }
+    return $code->();
 }
 
 sub run_tests {
@@ -245,7 +268,10 @@ sub next_subtest_name {
     my $self = shift;
     my $local_id = $self->{done_tests} || 0;
     $local_id++;
-    return $self->test_name . '.' . $local_id;
+    return join '.',
+        $self->test_name,
+        (defined $self->{test_block_name} ? $self->{test_block_name} : ()),
+        $local_id;
 }
 
 sub diag {

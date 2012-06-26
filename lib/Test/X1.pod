@@ -53,7 +53,19 @@ XXX
 
 XXX
 
-=head2 Context object
+=head2 Tests
+
+XXX
+
+The C<TEST_METHOD> environment variable can be used to specify the
+regular expression used to filter the tests to run by their names.  If
+the environment variable is not set, all tests are run.  Otherwise,
+only the tests matching the pattern are run.  Please note that the
+test name used to match is the string returned by C<< $c->test_name
+>>, i.e. the C<name> option, if specified, followed by C< (>,
+sequential test number, and C<)> (i.e. C<hoge (2)> or C<(1)>).
+
+=head2 Context objects
 
 XXX
 
@@ -61,6 +73,25 @@ The C<< $c->done >> method must be invoked when and only when all the
 subtests belong to the test has been done.  Once the method has been
 invoked, no subtest can be performed in the test.  If the method is
 not invoked in the test, an error would be reported.
+
+=head2 Test blocks
+
+XXX
+
+Test block can be named by the C<name> option:
+
+  test {
+    test {
+      ok 1, 'Test X';
+    } $c, name => 'hoge';
+  };
+  
+  # ok 1 - (1).hoge.1 Test X
+
+The C<TEST_BLOCK_SKIP> environment variable can be used to specify the
+regular expression to skip the test blocks with names matching to the
+pattern.  For example, C<TEST_BLOCK_SKIP=ho.*> would precent the C<ok>
+statement in the example above from executed.
 
 =head2 Subclassing
 
