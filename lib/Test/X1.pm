@@ -46,6 +46,17 @@ sub new {
     }, $_[0];
 }
 
+sub test_method_regexp {
+    my $self = shift;
+    return $self->{test_method_regexp} if exists $self->{test_method_regexp};
+    my $tm = $ENV{TEST_METHOD};
+    if (defined $tm) {
+        return $self->{test_method_regexp} = qr/$tm/;
+    } else {
+        return $self->{test_method_regexp} = undef;
+    }
+}
+
 sub define_test {
     my $self = shift;
 
@@ -54,6 +65,15 @@ sub define_test {
 
     my ($code, %args) = @_;
     $args{id} = 1 + @{$self->{tests}};
+
+    my $methods = $self->test_method_regexp;
+    if ($methods) {
+        my $context_class = ref $self;
+        $context_class =~ s/::Manager$/::Context/;
+        my $name = $context_class->test_name(\%args);
+        return unless $name =~ /$methods/;
+    }
+
     push @{$self->{tests}}, [$code, \%args];
 }
 
@@ -200,14 +220,21 @@ sub new {
 }
 
 sub test_name {
-    my $self = shift;
+    my ($self, $args);
+    if (ref $_[0]) {
+        $self = shift;
+        $args = $self->{args};
+    } else {
+        $self = {};
+        $args = $_[1];
+    }
     return $self->{test_name} ||= do {
-        my $name = '(' . $self->{args}->{id} . ')';
-        if (defined $self->{args}->{name}) {
-            if (ref $self->{args}->{name} eq 'ARRAY') {
-                $name = (join '.', @{$self->{args}->{name}}) . ' ' . $name;
+        my $name = '(' . $args->{id} . ')';
+        if (defined $args->{name}) {
+            if (ref $args->{name} eq 'ARRAY') {
+                $name = (join '.', @{$args->{name}}) . ' ' . $name;
             } else {
-                $name = $self->{args}->{name} . ' ' . $name;
+                $name = $args->{name} . ' ' . $name;
             }
         }
         $name;
@@ -242,6 +269,7 @@ sub cb {
 sub done {
     my $self = shift;
     if ($self->{done}) {
+        local $Test::X1::ErrorReportedByX1 = 1;
         Test::More::is('done', undef, $self->test_name . ' $c->done');
         $self->diag(undef, '$c->done is called more than once in a test');
         return;
@@ -279,6 +307,7 @@ sub DESTROY {
     unless ($self->{done}) {
         die "Can't continue test anymore (an exception is thrown before the test?)\n" unless $self->{cv};
 
+        local $Test::X1::ErrorReportedByX1 = 1;
         Test::More::is(undef, 'done', $self->test_name . ' $c->done');
         $self->diag(undef, "\$c->done is not invoked (or |die|d within test?)");
         $self->done;
