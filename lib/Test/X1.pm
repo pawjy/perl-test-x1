@@ -40,6 +40,7 @@ use Term::ANSIColor ();
 
 sub new {
     return bless {
+        next_test_number => 1,
         tests => [],
         #test_started
         #test_context
@@ -64,7 +65,7 @@ sub define_test {
         if $self->{test_started};
 
     my ($code, %args) = @_;
-    $args{id} = 1 + @{$self->{tests}};
+    $args{id} = $self->{next_test_number}++;
 
     my $methods = $self->test_method_regexp;
     if ($methods) {
