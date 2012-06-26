@@ -87,9 +87,13 @@ sub run_tests {
 
         if ($self->{test_context}) {
             if (defined $name) {
-                $name = join ' ', 
-                    $self->{test_context}->next_subtest_name,
-                    ref $name eq 'ARRAY' ? @$name : $name;
+                if ($Test::X1::ErrorReportedByX1) {
+                    #
+                } else {
+                    $name = join ' ', 
+                        $self->{test_context}->next_subtest_name,
+                        ref $name eq 'ARRAY' ? @$name : $name;
+                }
             } else {
                 $name = $self->{test_context}->next_subtest_name;
             }
@@ -219,6 +223,7 @@ sub diag {
 
 sub receive_exception {
     my ($self, $err) = @_;
+    local $Test::X1::ErrorReportedByX1 = 1;
     Test::More::is($err, undef, $self->test_name . '.lives_ok');
 }
 
