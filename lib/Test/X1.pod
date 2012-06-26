@@ -53,6 +53,15 @@ XXX
 
 XXX
 
+=head2 Context object
+
+XXX
+
+The C<< $c->done >> method must be invoked when and only when all the
+subtests belong to the test has been done.  Once the method has been
+invoked, no subtest can be performed in the test.  If the method is
+not invoked in the test, an error would be reported.
+
 =head2 Subclassing
 
 XXX

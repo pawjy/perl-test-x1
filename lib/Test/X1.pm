@@ -97,6 +97,11 @@ sub run_tests {
             } else {
                 $name = $self->{test_context}->next_subtest_name;
             }
+
+            if ($self->{test_context}->{done}) {
+                $self->diag(undef, $name . ': A subtest occurs after $c->done is called.');
+            }
+
             $self->{test_context}->{done_tests}++;
         }
         
@@ -236,6 +241,11 @@ sub cb {
 
 sub done {
     my $self = shift;
+    if ($self->{done}) {
+        Test::More::is('done', undef, $self->test_name . ' $c->done');
+        $self->diag(undef, '$c->done is called more than once in a test');
+        return;
+    }
 
     my $done_tests = $self->{done_tests} || 0;
     my $failed_tests = $self->{failed_tests} || 0;
@@ -269,6 +279,7 @@ sub DESTROY {
     unless ($self->{done}) {
         die "Can't continue test anymore (an exception is thrown before the test?)\n" unless $self->{cv};
 
+        Test::More::is(undef, 'done', $self->test_name . ' $c->done');
         $self->diag(undef, "\$c->done is not invoked (or |die|d within test?)");
         $self->done;
     }
