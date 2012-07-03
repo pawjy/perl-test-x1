@@ -173,24 +173,36 @@ sub run_tests {
 
         my $context_class = ref $self;
         $context_class =~ s/::Manager$/::Context/;
-        for (@{$self->{tests}}) {
+        for my $test (@{$self->{tests}}) {
             my $test_name;
             my $context = $context_class->new(
-                args => $_->[1],
+                args => $test->[1],
                 cv => $cv,
                 cb => sub {
                     $skipped_tests += $_[0]->{skipped_tests} || 0;
                 },
                 %$context_args,
             );
-            local $self->{test_context} = $context;
             $cv->begin;
-            eval {
-                $_->[0]->($context);
-                1;
-            } or do {
-                $context->receive_exception($@);
+            my $run_test = sub {
+                local $self->{test_context} = $context;
+                eval {
+                    $test->[0]->($context);
+                    1;
+                } or do {
+                    $context->receive_exception($@);
+                };
             };
+            if ($test->[1]->{wait}) {
+                my $test_cb_old = $test->[1]->{wait}->cb;
+                $test->[1]->{wait}->cb(sub {
+                    local $context->{received_data} = $_[0]->recv;
+                    $run_test->();
+                    $test_cb_old->(@_) if $test_cb_old;
+                });
+            } else {
+                $run_test->();
+            }
         }
 
         $cv->end;
@@ -284,6 +296,10 @@ sub receive_exception {
     my ($self, $err) = @_;
     local $Test::X1::ErrorReportedByX1 = 1;
     Test::More::is($err, undef, $self->test_name . '.lives_ok');
+}
+
+sub received_data {
+    return $_[0]->{received_data};
 }
 
 sub cb {

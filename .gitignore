@@ -1,5 +1,4 @@
 *~
 local/
-perl
 config/perl/libs.txt
 Makefile.setupenv

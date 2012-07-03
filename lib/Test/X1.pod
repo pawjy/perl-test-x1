@@ -55,6 +55,8 @@ XXX
 
 =head2 Tests
 
+The C<test> function is sometimes referred to as I<test definition>.
+
 XXX
 
 The C<TEST_METHOD> environment variable can be used to specify the
@@ -93,9 +95,37 @@ regular expression to skip the test blocks with names matching to the
 pattern.  For example, C<TEST_BLOCK_SKIP=ho.*> would precent the C<ok>
 statement in the example above from executed.
 
+=head2 Waiting for a condvar
+
+An L<AnyEvent> condvar can be specified as the C<wait> parameter to a
+test definition (I<not> test block!) to wait for the condvar to
+receive a value.  The received value can be accessed from the C<<
+$c->received_data >> method of the context object.
+
+  my $cv = AE::cv;
+  test {
+      my $c = shift;
+      is $c->received_data, 123;
+      $c->done;
+  } wait => $cv;
+
 =head2 Subclassing
 
 XXX
+
+=head1 CONTEXT OBJECT
+
+XXX
+
+=over 4
+
+=item $data = $c->received_data
+
+Return the data received from the L<AnyEvent> condvar specified to the
+C<wait> parameter of the test definition for the current test.  See
+also L</"Waiting for a condvar">.
+
+=back
 
 =head1 AUTHOR
 
