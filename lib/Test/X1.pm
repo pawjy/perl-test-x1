@@ -193,9 +193,11 @@ sub run_tests {
                     $context->receive_exception($@);
                 };
             };
-            if ($test->[1]->{wait}) {
-                my $test_cb_old = $test->[1]->{wait}->cb;
-                $test->[1]->{wait}->cb(sub {
+            my $wait = exists $test->[1]->{wait}
+                ? $test->[1]->{wait} : $self->default_test_wait_cv;
+            if ($wait) {
+                my $test_cb_old = $wait->cb;
+                $wait->cb(sub {
                     local $context->{received_data} = $_[0]->recv;
                     $run_test->();
                     $test_cb_old->(@_) if $test_cb_old;
@@ -217,6 +219,10 @@ sub run_tests {
         $self->diag(undef, sprintf "Looks like you skipped %d test%s.",
                                $skipped_tests, $skipped_tests == 1 ? '' : 's');
     }
+}
+
+sub default_test_wait_cv {
+    return undef;
 }
 
 sub within_test_env {

@@ -109,9 +109,33 @@ $c->received_data >> method of the context object.
       $c->done;
   } wait => $cv;
 
+The default C<wait> value, used when no C<wait> parameter is
+explicitly specified to test definitions, can be provided by
+subclassing (see L</"Subclassing"> for details) and defining C<<
+$manager->default_test_wait_cv >> method returning a condvar (or
+C<undef>) in the test manager subclass.  In this case, by explicitly
+setting C<undef> value for the C<wait> parameter of test definitions,
+this default can be cleared.  (See C<t/cv-wait-default.t> test script
+for examples.)
+
 =head2 Subclassing
 
 XXX
+
+=head1 TEST MANAGER OBJECT
+
+XXX
+
+=over 4
+
+=item $cv = $manager->default_test_wait_cv
+
+This method can be overridden by subclasses, if desired.  This method
+is expected to return an L<AnyEvent> condvar or C<undef>.  The value
+returned by this method is used as the C<wait> parameter value of test
+definitions, when it is not explicitly specified.
+
+=back
 
 =head1 CONTEXT OBJECT
 
