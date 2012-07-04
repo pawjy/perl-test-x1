@@ -6,25 +6,25 @@ our $VERSION = '1.0';
 sub define_functions ($) {
     my $CLASS = shift;
     no strict 'refs';
-    push @{$CLASS . '::EXPORT'}, qw(test run_tests);
+    push @{$CLASS . '::EXPORT'}, qw(test run_tests get_test_manager);
     eval sprintf q{
         package %s;
         use Exporter::Lite;
 
-        sub get_manager () {
+        sub get_test_manager () {
             $%s::manager ||= %s::Manager->new;
         }
 
         sub test (&;@) {
             if (defined $_[1] and UNIVERSAL::isa($_[1], 'Test::X1::Context')) {
-                get_manager->execute_with_context(@_);
+                get_test_manager->execute_with_context(@_);
              } else {
-                get_manager->define_test(@_);
+                get_test_manager->define_test(@_);
              }
         }
         
         sub run_tests () {
-            get_manager->run_tests;
+            get_test_manager->run_tests;
         }
 
         1;

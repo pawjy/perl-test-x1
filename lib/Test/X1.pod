@@ -126,6 +126,13 @@ XXX
 
 XXX
 
+The test manager object is singleton; there is at most one test
+manager object at one time.
+
+The C<Text::X1> class (and its subclasses) exports C<get_test_manager>
+function, which takes no argument, returning the current test manager
+object.
+
 =over 4
 
 =item $cv = $manager->default_test_wait_cv
