@@ -157,6 +157,47 @@ setting C<undef> value for the C<wait> parameter of test definitions,
 this default can be cleared.  (See C<t/cv-wait-default.t> test script
 for examples.)
 
+=head2 Concurrent execution of tests
+
+Thanks to L<AnyEvent> framework, tests (as defined by outermost C<test
+{}> blocks) can be concurrenrly executed when they are written in
+non-blocking way using L<AnyEvent>.
+
+Consider the following test script fragment:
+
+  test {
+      my $c = shift;
+      ok 'Subtest #1.1';
+      AnyEvent::Example->something(cb => sub {
+          is $_[0], 'hoge', 'Subtest #1.2';
+          $c->done;
+      });
+  };
+  
+  test {
+      my $c = shift;
+      ok 'Subtest #2.1';
+      AnyEvent::Example->something(cb => sub {
+          is $_[0], 'hoge', 'Subtest #2.2';
+          $c->done;
+      });
+  };
+  
+  runtests;
+
+In this case, Subtest #2.1 is always executed after Subtest #1.1 is
+run, as C<Test::X1>'s C<runtests> executes tests in the same order as
+they are defined.  However, execution order of Subtests #1.2 and #2.2
+is unclear at all, depending on how long C<<
+AnyEvent::Example->something >> defers the execution of the callbacks.
+
+Anyway, we can describe this situation that multiple tests are
+concurrently executed.  By default, at most five tests are
+concurrently executed by C<Test::X1>.  Setting a number to the
+C<TEST_MAX_CONCUR> environment variable can override this default, if
+desired.  C<TEST_MAX_CONCUR=1> disables this concurrency, which will
+be useful for debugging purposes in particular.
+
 =head2 Subclassing
 
 XXX

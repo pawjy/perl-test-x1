@@ -176,27 +176,31 @@ sub run_tests {
     require AnyEvent;
     my $cv = AnyEvent->condvar;
 
-    $self->within_test_env(sub {
-        my $self = shift;
-        $cv->begin(sub {
-            $cv->send;
-        });
+    my $schedule_test;
+    $cv->begin(sub {
+        undef $schedule_test;
+        $_[0]->send;
+    });
 
-        my $context_args = $self->context_args;
+    my $context_args = $self->context_args;
+    my $context_class = ref $self;
+    $context_class =~ s/::Manager$/::Context/;
 
-        my $context_class = ref $self;
-        $context_class =~ s/::Manager$/::Context/;
-        for my $test (@{$self->{tests}}) {
+    my @test = @{$self->{tests}};
+    $schedule_test = sub {
+        if (@test) {
+            my $test = shift @test;
+            my $test_cv = AE::cv;
+
             my $test_name;
             my $context = $context_class->new(
                 args => $test->[1],
-                cv => $cv,
+                cv => $test_cv,
                 cb => sub {
                     $skipped_tests += $_[0]->{skipped_tests} || 0;
                 },
                 %$context_args,
             );
-            $cv->begin;
             my $run_test = sub {
                 local $self->{test_context} = $context;
                 eval {
@@ -218,10 +222,18 @@ sub run_tests {
             } else {
                 $run_test->();
             }
-        }
 
-        $cv->end;
-    });
+            $test_cv->cb($schedule_test);
+        } else {
+            $cv->end;
+        }
+    };
+    for (1..($ENV{TEST_MAX_CONCUR} || 5)) {
+        $cv->begin;
+        $schedule_test->();
+    }
+
+    $cv->end;
 
     $cv->recv;
     $self->terminate_test_env;
@@ -237,11 +249,6 @@ sub run_tests {
 
 sub default_test_wait_cv {
     return undef;
-}
-
-sub within_test_env {
-    my ($self, $code) = @_;
-    $code->($self);
 }
 
 sub context_args {
@@ -372,7 +379,7 @@ sub done {
     $self->{done} = 1;
     $self->{cb}->($self) if $self->{cb};
 
-    $self->{cv}->end;
+    $self->{cv}->send;
 }
 
 sub DESTROY {
