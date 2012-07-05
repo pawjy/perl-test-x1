@@ -366,7 +366,7 @@ sub done {
                             $done_tests);
         }
     } elsif ($done_tests == 0) {
-        $self->diag(undef, 'No test');
+        $self->diag(undef, 'No subtests run!');
     }
 
     $self->{done} = 1;
