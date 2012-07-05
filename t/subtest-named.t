@@ -32,19 +32,29 @@ test {
     $c->done;
 } n => 2, name => ['sync-only'];
 
+test {
+    my $c = shift;
+    test {
+        ok 1, ['sub2', '', undef, 0];
+    } $c, name => ['block', '', undef, 0];
+    $c->done;
+} n => 1, name => ['name', '', undef, 0];
+
 run_tests;
 
 !!1;
 
-use Test::More tests => 5;
+use Test::More tests => 6;
 
 my ($output, $err) = PackedTest->run;
 
-like $output, qr/^1\.\.3$/m;
+like $output, qr/^1\.\.4$/m;
 
-like $output, qr/^ok \d+ - ae\.timer \(\d+\)\.1 sub1$/m;
+like $output, qr/^ok \d+ - ae\.timer \(\d+\)\.1\.sub1$/m;
 
-like $output, qr/^ok \d+ - sync-only \(\d+\)\.1 sub2$/m;
+like $output, qr/^ok \d+ - sync-only \(\d+\)\.1\.sub2$/m;
 like $output, qr/^ok \d+ - sync-only \(\d+\)\.2$/m;
+
+like $output, qr/^ok \d+ - \Qname.(empty).(undef).0\E \(\d+\)\Q.block.(empty).(undef).0.1.sub2.(empty).(undef).0\E$/m;
 
 unlike $output, qr/^not ok/m;

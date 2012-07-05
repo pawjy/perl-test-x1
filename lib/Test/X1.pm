@@ -99,13 +99,19 @@ sub test_block_skip_regexp {
 sub execute_with_context {
     my ($self, $code, $context, %args) = @_;
     local $self->{test_context} = $context;
-    local $context->{test_block_name} = $args{name};
-    if ($args{name}) {
+    my $name = $args{name};
+    if (defined $name) {
+        $name = join '.', 
+            map { defined $_ ? length $_ ? $_ : '(empty)' : '(undef)' }
+            ref $name eq 'ARRAY' ? @$name : $name;
+    }
+    local $context->{test_block_name} = $name;
+    if ($name) {
         my $skip = $self->test_block_skip_regexp;
-        if ($skip and $args{name} =~ /$skip/) {
+        if ($skip and $name =~ /$skip/) {
             Test::More->builder->skip;
             $self->diag(undef, sprintf '%s.%s - subtests skipped.',
-                                   $context->test_name, $args{name});
+                                   $context->test_name, $name);
             return;
         }
     }
@@ -140,7 +146,8 @@ sub run_tests {
                 if ($Test::X1::ErrorReportedByX1) {
                     #
                 } else {
-                    $name = join ' ', 
+                    $name = join '.', 
+                        map { defined $_ ? length $_ ? $_ : '(empty)' : '(undef)' } 
                         $self->{test_context}->next_subtest_name,
                         ref $name eq 'ARRAY' ? @$name : $name;
                 }
@@ -289,7 +296,9 @@ sub test_name {
         my $name = '(' . $args->{id} . ')';
         if (defined $args->{name}) {
             if (ref $args->{name} eq 'ARRAY') {
-                $name = (join '.', @{$args->{name}}) . ' ' . $name;
+                $name = (join '.', map {
+                    defined $_ ? length $_ ? $_ : '(empty)' : '(undef)';
+                } @{$args->{name}}) . ' ' . $name;
             } else {
                 $name = $args->{name} . ' ' . $name;
             }
