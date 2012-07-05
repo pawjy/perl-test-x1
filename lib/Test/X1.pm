@@ -10,6 +10,7 @@ sub define_functions ($) {
     eval sprintf q{
         package %s;
         use Exporter::Lite;
+        use Scalar::Util qw(weaken);
 
         sub get_test_manager () {
             $%s::manager ||= %s::Manager->new;
@@ -25,10 +26,15 @@ sub define_functions ($) {
         
         sub run_tests () {
             get_test_manager->run_tests;
+            weaken $%s::manager;
+        }
+
+        END {
+            $%s::manager->stop_test_manager if $%s::manager;
         }
 
         1;
-    }, $CLASS, $CLASS, $CLASS or die $@;
+    }, $CLASS, $CLASS, $CLASS, $CLASS, $CLASS, $CLASS or die $@;
 }
 
 Test::X1::define_functions(__PACKAGE__);
@@ -164,8 +170,8 @@ sub run_tests {
     my $cv = AnyEvent->condvar;
 
     $self->within_test_env(sub {
+        my $self = shift;
         $cv->begin(sub {
-            $self->terminate_test_env;
             $cv->send;
         });
 
@@ -211,6 +217,7 @@ sub run_tests {
     });
 
     $cv->recv;
+    $self->terminate_test_env;
     delete $self->{test_context};
 
     Test::More::done_testing()
@@ -227,7 +234,7 @@ sub default_test_wait_cv {
 
 sub within_test_env {
     my ($self, $code) = @_;
-    $code->();
+    $code->($self);
 }
 
 sub context_args {
@@ -252,6 +259,14 @@ sub note {
     } else {
         Test::More->builder->note($_[2]);
     }
+}
+
+sub stop_test_manager {
+    #
+}
+
+sub DESTROY {
+    $_[0]->stop_test_manager;
 }
 
 package Test::X1::Context;

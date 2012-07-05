@@ -142,6 +142,16 @@ is expected to return an L<AnyEvent> condvar or C<undef>.  The value
 returned by this method is used as the C<wait> parameter value of test
 definitions, when it is not explicitly specified.
 
+=item $manager->stop_test_manager
+
+This method can be overridden by subclasses, if desired.  This method
+is invoked before the test manager object is destructed.  It is
+expected to be used to close anything opened by the test manager, if
+necessary.  This method can be invoked more than once for an test
+manager object.  The C<Test::X1> module does it's best effort to
+invoke the method for the test manager object before Perl goes into
+the global destruction phase.
+
 =back
 
 =head1 CONTEXT OBJECT
