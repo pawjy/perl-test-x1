@@ -1,6 +1,6 @@
 =head1 NAME
 
-Test::X1 - A test manager
+Test::X1 - A lightweight test manager
 
 =head1 SYNOPSIS
 
@@ -31,11 +31,11 @@ Test::X1 - A test manager
   } n => 3, name => ['anyevent', 'callback'];
   
   run_tests;
-  
-  # ok 1 - (1).1
-  # ok 2 - (1).2
-  # ok 3 - anyevent.callback (2).1
-  # ok 4 - anyevent.callback (2).2
+
+  ok 1 - (1).1
+  ok 2 - (1).2
+  ok 3 - anyevent.callback (2).1
+  ok 4 - anyevent.callback (2).2
   not ok 5 - anyevent.callback (2).3
   #   Failed test 'anyevent.callback (2).3'
   #   at lib/Test/X1.pod line 24.
@@ -47,25 +47,98 @@ Test::X1 - A test manager
 
 =head1 DESCRIPTION
 
-XXX
+The C<Test::X1> module defines a simple, lightweight test management
+framework for L<Test::Builder>-based tests.  It supports automatic
+naming of tests, partial execution, concurrent execution, and other
+useful features.
 
 =head1 USAGE
 
-XXX
+By C<use>ing the C<Test::X1> module, functions for defining and
+running tests are exported to the caller package.  Note that it only
+exports test management functions.  You have to import or define your
+favorite test assertion sets such as L<Test::More> or
+L<Test::Differences> by yourself.  The C<Test::X1> test framework only
+assumes that you are writing L<Test::Builder>-based test script; As
+long as test assertion functions are build upon L<Test::Builder>'s
+framework, you can select any random test module.
 
 =head2 Tests
 
-The C<test> function is sometimes referred to as I<test definition>.
+A C<Test::X1>-based test script consists of one or more tests.  A
+I<test> is a group of I<subtests>, which are L<Test::Builder>-based
+assertion functions such as I<is> and I<ok>.  A test can be defined by
+enclosing subtests and related codes by the C<test> function:
 
-XXX
+  test {
+      my $c = shift;
+      
+      is 2 * 4, 8;
+      is 40 - 30, 10;
+      
+      $c->done;
+  };
+
+This usage of the C<test> function is sometimes referred to as I<test
+definition>.  The code block in the test definition is invoked with an
+argument, the context object for the test, I<$c>.  The C<< $c->done >>
+method has to be called when all subtests in the test are done.  (See
+L</"Context objects"> for more information on I<$c>.)
+
+You can specify the number of subtests in a test by specifying the
+C<n> option to the test definition.  If the C<n> option is specified,
+it is verified that the expected number of subtests are done before
+the C<< $c->done >> metohd is invoked.  It is considered as good
+practice to specify the number of subtests, especially when there are
+loops in the test, such that it can be confirmed that all expected
+subtests are really executed.  Since the number of subtests can be
+frequently changed in some cases, or it could even be unknown a
+priori, the C<n> option is not required.
+
+The test can be named by specifying the C<name> option to the test
+definition.  If the option is specified, the name of the test is the
+C<name> value, followed by C< (>, the sequential number of the test,
+then C<)> (e.g. C<hoge (1)>).  Otherwise, i.e. if the option is not
+specified, the name of the test is C<(> followed by the sequential
+number of the test, then C<)> (e.g. C<(2)>).
+
+The name of the test is used to construct the name of the subtests in
+the test.
 
 The C<TEST_METHOD> environment variable can be used to specify the
 regular expression used to filter the tests to run by their names.  If
-the environment variable is not set, all tests are run.  Otherwise,
-only the tests matching the pattern are run.  Please note that the
-test name used to match is the string returned by C<< $c->test_name
->>, i.e. the C<name> option, if specified, followed by C< (>,
-sequential test number, and C<)> (i.e. C<hoge (2)> or C<(1)>).
+the environment variable is not set, all tests are executed.
+Otherwise, only the tests whose name matches the pattern are executed.
+
+See also L</Naming> for how names are handled and used by the module.
+
+For example, consider the following test script:
+
+  # t/foo.t
+  use Test::X1;
+  use Test::More;
+  
+  my $x = 10;
+  
+  test {
+      my $c = shift;
+      is $x, 10;
+      $c->done;
+  } name => 'abc2';
+  
+  test {
+      my $c = shift;
+      is $x * 2, 20;
+      $c->done;
+  };
+  
+  run_tests;
+
+The first test is named as C<abc2 (1)>, while the second test is named
+as C<(2)>.  If the script is executed with no C<TEST_METHOD>, both of
+them are executed.  If the script is executed with C<TEST_METHOD=abc>,
+only the first test is executed.  If the script is executed with
+C<TEST_METHOD=2>, both of them are executed.
 
 =head2 Context objects
 
@@ -169,8 +242,10 @@ Consider the following test script fragment:
       my $c = shift;
       ok 'Subtest #1.1';
       AnyEvent::Example->something(cb => sub {
-          is $_[0], 'hoge', 'Subtest #1.2';
-          $c->done;
+          test {
+              is $_[0], 'hoge', 'Subtest #1.2';
+              $c->done;
+          } $c;
       });
   };
   
@@ -178,15 +253,17 @@ Consider the following test script fragment:
       my $c = shift;
       ok 'Subtest #2.1';
       AnyEvent::Example->something(cb => sub {
-          is $_[0], 'hoge', 'Subtest #2.2';
-          $c->done;
+          test {
+              is $_[0], 'hoge', 'Subtest #2.2';
+              $c->done;
+          } $c;
       });
   };
   
-  runtests;
+  run_tests;
 
 In this case, Subtest #2.1 is always executed after Subtest #1.1 is
-run, as C<Test::X1>'s C<runtests> executes tests in the same order as
+run, as C<Test::X1>'s C<run_tests> executes tests in the same order as
 they are defined.  However, execution order of Subtests #1.2 and #2.2
 is unclear at all, depending on how long C<<
 AnyEvent::Example->something >> defers the execution of the callbacks.
@@ -250,7 +327,12 @@ also L</"Waiting for a condvar">.
 
 =head1 AUTHOR
 
-Wakaba <wakabatan@hatena.ne.jp>.
+Wakaba (id:wakabatan) <wakabatan@hatena.ne.jp>.
+
+=head1 ACKNOWLEDGEMENTS
+
+This module is inspired by following modules: C<Test::Builder>,
+C<Test::Class>, C<Test::More>.
 
 =head1 LICENSE
 
