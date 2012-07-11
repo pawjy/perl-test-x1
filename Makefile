@@ -1,3 +1,11 @@
+# Running tests:
+#     $ make test
+# Install required Perl modules into ./local/
+#     $ make pmb-install
+# Update list of required Perl modules:
+#     1. Edit config/perl/modules.txt
+#     2. Run "make pmb-update"
+#     3. Commit modified files
 
 all:
 
@@ -20,10 +28,8 @@ Makefile-setupenv: Makefile.setupenv
 Makefile.setupenv:
 	$(WGET) -O $@ https://raw.github.com/wakaba/perl-setupenv/master/Makefile.setupenv
 
-lperl lplackup local-perl perl-version perl-exec \
+lperl local-perl perl-version perl-exec \
 pmb-update pmb-install \
-remotedev-test remotedev-reset remotedev-reset-setupenv \
-cinnamon \
 generatepm: %: Makefile-setupenv
 	$(MAKE) --makefile Makefile.setupenv $@ \
             REMOTEDEV_HOST=$(REMOTEDEV_HOST) \

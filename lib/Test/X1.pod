@@ -142,31 +142,113 @@ C<TEST_METHOD=2>, both of them are executed.
 
 =head2 Context objects
 
-XXX
+The code block in the test definition is invoked with an argument,
+i.e. the context object, in the C<@_> array.  The context object
+provides several utility methods for the test and is created
+specifically for the test.  In other word, different context objects
+are created for different test definitions.  In this document, the
+context object is sometimes referred to as C<$c>.
 
-The C<< $c->done >> method must be invoked when and only when all the
-subtests belong to the test has been done.  Once the method has been
-invoked, no subtest can be performed in the test.  If the method is
-not invoked in the test, an error would be reported.
+The most significant method of the test context object is the C<done>
+method.  The C<< $c->done >> method must be invoked when and only when
+all the subtests in the test has been done, successfully or not.  Once
+the method has been invoked, no subtest can be performed in the test.
+If the method is not invoked in the test, an error would be reported.
+
+The most basic usage would be invoking the C<< $c->done >> method just
+before the end of the test code:
+
+  test {
+      my $c = shift;
+      
+      ... tests ...
+      
+      $c->done;
+  } $c;
+
+If there are callbacks, the C<< $c->done >> method should be invoked
+at the end of the last callback:
+
+  test {
+      my $c = shift;
+      my $timer = AE::timer 10, 0, sub {
+          test {
+              ...;
+              $c->done;
+          } $c;
+      };
+  } $c;
+
+(The inner C<test> statement is a test block; See L</"Test blocks">
+for details.)
+
+More complex example:
+
+  test {
+      my $c = shift;
+      
+      my $cv = AE::cv;
+      
+      # This callback will be executed after all of
+      # following callbacks are invoked.
+      $cv->begin (sub { test { $c->done } $c });
+      
+      $cv->begin;
+      my $timer1 = AE::timer 10, 0, sub { $cv->end };
+      
+      $cv->begin;
+      my $timer2 = AE::timer 4, 0, sub { $cv->end };
+      
+      ...
+      
+      $cv->end;
+  } $c;
+
+Application test framework built on top of the module might define
+additional methods to context objects.  See C</"Subclassing"> on the
+guideline for extending the context object interface.
 
 =head2 Test blocks
 
-XXX
+Another usage of the C<test> function is defining a B<test block>.
+They are different from the test definitions in that they are used
+within some test definition and takes the test context object I<$c> as
+the first argument.
+
+Test blocks are typically used within callback functions in a test; in
+fact there has to be a test block within an asynchronously invoked
+callback function:
+
+  test {
+      my $c = shift;
+      AE::io *STDIN, 0, sub {
+          test {
+              is scalar <STDIN>, "hoge";
+              $c->done;
+          } $c;
+      };
+  };
+
+A test block gives the test context as encapsulated by I<$c> to the
+subtests within the block.  You have to enclose subtests within
+callback functions by yourself, unfortunately, otherwise the test
+manager losts the association of subtests and their "parent" test, due
+to the asynchronousness of the invocation of the callback.
 
 Test block can be named by the C<name> option:
 
   test {
-    test {
-      ok 1, 'Test X';
-    } $c, name => 'hoge';
+      test {
+          ok 1, 'Test X';
+      } $c, name => 'hoge';
   };
   
   # ok 1 - (1).hoge.1 Test X
 
 The C<TEST_BLOCK_SKIP> environment variable can be used to specify the
 regular expression to skip the test blocks with names matching to the
-pattern.  For example, C<TEST_BLOCK_SKIP=ho.*> would precent the C<ok>
-statement in the example above from executed.
+pattern.  For example, C<TEST_BLOCK_SKIP=og.$> would prevent the C<ok>
+statement in the example above from executed.  See also C</Naming>.
 
 =head2 Naming
 
@@ -325,6 +407,19 @@ also L</"Waiting for a condvar">.
 
 =back
 
+=head1 DEPENDENCY
+
+This module requires Perl 5.8 or later.  In addition to core modules,
+this module depends on L<Exporter::Lite> and L<AnyEvent>.
+
+=head1 DEVELOPMENT
+
+Latest version of this module is available in the GitHub repository:
+<https://github.com/wakaba/perl-test-x1>.
+
+Tests are automatically run by Travis CI
+<http://travis-ci.org/wakaba/perl-test-x1>.
+
 =head1 AUTHOR
 
 Wakaba (id:wakabatan) <wakabatan@hatena.ne.jp>.
@@ -337,6 +432,8 @@ C<Test::Class>, C<Test::More>.
 =head1 LICENSE
 
 Copyright 2012 Hatena <http://www.hatena.ne.jp/>.
+
+Copyright 2012 Wakaba <w@suika.fam.cx>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
