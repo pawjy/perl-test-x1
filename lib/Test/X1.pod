@@ -68,7 +68,7 @@ framework, you can select any random test module.
 A C<Test::X1>-based test script consists of one or more tests.  A
 I<test> is a group of I<subtests>, which are L<Test::Builder>-based
 assertion functions such as I<is> and I<ok>.  A test can be defined by
-enclosing subtests and related codes by the C<test> function:
+enclosing subtests and related codes by the C<test{}> function:
 
   test {
       my $c = shift;
@@ -79,11 +79,11 @@ enclosing subtests and related codes by the C<test> function:
       $c->done;
   };
 
-This usage of the C<test> function is sometimes referred to as I<test
-definition>.  The code block in the test definition is invoked with an
-argument, the context object for the test, I<$c>.  The C<< $c->done >>
-method has to be called when all subtests in the test are done.  (See
-L</"Context objects"> for more information on I<$c>.)
+This usage of the C<test{}> function is sometimes referred to as
+I<test definition>.  The code block in the test definition is invoked
+with an argument, the context object for the test, I<$c>.  The C<<
+$c->done >> method has to be called when all subtests in the test are
+done.  (See L</"Context objects"> for more information on I<$c>.)
 
 You can specify the number of subtests in a test by specifying the
 C<n> option to the test definition.  If the C<n> option is specified,
@@ -140,6 +140,12 @@ them are executed.  If the script is executed with C<TEST_METHOD=abc>,
 only the first test is executed.  If the script is executed with
 C<TEST_METHOD=2>, both of them are executed.
 
+The C<run_tests> function runs the tests defined by C<test{}>
+functions.  It must be invoked exactly once in the test script, after
+all tests are defined.  You can run any preparation code before the
+invocation, or cleanup code after the invocation.  The C<run_tests>
+function does not return until all tests are done.
+
 =head2 Context objects
 
 The code block in the test definition is invoked with an argument,
@@ -179,7 +185,7 @@ at the end of the last callback:
       };
   } $c;
 
-(The inner C<test> statement is a test block; See L</"Test blocks">
+(The inner C<test{}> statement is a test block; See L</"Test blocks">
 for details.)
 
 More complex example:
@@ -210,7 +216,7 @@ guideline for extending the context object interface.
 
 =head2 Test blocks
 
-Another usage of the C<test> function is defining a B<test block>.
+Another usage of the C<test{}> function is defining a B<test block>.
 They are different from the test definitions in that they are used
 within some test definition and takes the test context object I<$c> as
 the first argument.
@@ -314,9 +320,9 @@ for examples.)
 
 =head2 Concurrent execution of tests
 
-Thanks to L<AnyEvent> framework, tests (as defined by outermost C<test
-{}> blocks) can be concurrenrly executed when they are written in
-non-blocking way using L<AnyEvent>.
+Thanks to L<AnyEvent> framework, tests (as defined by outermost
+C<test{}> functions) can be concurrenrly executed when they are
+written in non-blocking way using L<AnyEvent>.
 
 Consider the following test script fragment:
 
@@ -344,11 +350,14 @@ Consider the following test script fragment:
   
   run_tests;
 
-In this case, Subtest #2.1 is always executed after Subtest #1.1 is
-run, as C<Test::X1>'s C<run_tests> executes tests in the same order as
-they are defined.  However, execution order of Subtests #1.2 and #2.2
-is unclear at all, depending on how long C<<
-AnyEvent::Example->something >> defers the execution of the callbacks.
+In this case, execution order of Subtests #1.2 and #2.2 is unclear at
+all, depending on how long C<< AnyEvent::Example->something >> defers
+the execution of the callbacks.  (Please also note that, although in
+the current implementation Subtest #2.1 is always executed after
+Subtest #1.1, as that test is defined by C<test{}> after the other
+test, this is not guaranteed and you should not reply on this exact
+order.  Future version of the module could introduce shuffling
+execution mode, for instance.)
 
 Anyway, we can describe this situation that multiple tests are
 concurrently executed.  By default, at most five tests are
@@ -358,6 +367,10 @@ desired.  C<TEST_MAX_CONCUR=1> disables this concurrency, which will
 be useful for debugging purposes in particular.
 
 =head2 Subclassing
+
+XXX
+
+=head1 EXPORTED FUNCTIONS
 
 XXX
 
