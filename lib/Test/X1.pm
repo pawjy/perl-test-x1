@@ -33,8 +33,13 @@ sub define_functions ($) {
             $%s::manager->stop_test_manager if $%s::manager;
         }
 
+        if ('%s' ne 'Test::X1') {
+            push @%s::Manager::ISA, qw(Test::X1::Manager);
+            push @%s::Context::ISA, qw(Test::X1::Context);
+        }
+
         1;
-    }, $CLASS, $CLASS, $CLASS, $CLASS, $CLASS, $CLASS or die $@;
+    }, ($CLASS) x 10 or die $@;
 }
 
 Test::X1::define_functions(__PACKAGE__);
@@ -255,6 +260,7 @@ sub context_args {
     return {};
 }
 
+# XXX unused?
 sub terminate_test_env {
     #
 }

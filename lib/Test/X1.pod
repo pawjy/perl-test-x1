@@ -312,11 +312,11 @@ $c->received_data >> method of the context object.
 The default C<wait> value, used when no C<wait> parameter is
 explicitly specified to test definitions, can be provided by
 subclassing (see L</"Subclassing"> for details) and defining C<<
-$manager->default_test_wait_cv >> method returning a condvar (or
-C<undef>) in the test manager subclass.  In this case, by explicitly
-setting C<undef> value for the C<wait> parameter of test definitions,
-this default can be cleared.  (See C<t/cv-wait-default.t> test script
-for examples.)
+$tm->default_test_wait_cv >> method returning a condvar (or C<undef>)
+in the test manager subclass.  In this case, by explicitly setting
+C<undef> value for the C<wait> parameter of test definitions, this
+default can be cleared.  (See C<t/cv-wait-default.t> test script for
+examples.)
 
 =head2 Concurrent execution of tests
 
@@ -368,33 +368,176 @@ be useful for debugging purposes in particular.
 
 =head2 Subclassing
 
-XXX
+Test scripts often need application-specific factory functions and/or
+utility functions to create expected precondition or to manage states
+of tested environment.  For example, a test for Web application would
+need to start a Web server before any test and stop the server after
+tests.  A test for database operation would want to insert a number of
+records into the database at some points in the test code.  Although
+they can be implemented orthogonally from the C<Test::X1>'s framework,
+subclassing of the L<Test::X1> class should be a good candidate if you
+want to control the lifetime of such temporary objects by relating
+them with lexical scopes of tests.
+
+If you'd like to extend C<Test::X1> for your application C<My>, the
+subclass module, L<My/Test/X1.pm>, would look like:
+
+  package My::Test::X1;
+  use Test::X1 ();
+  Test::X1::define_functions(__PACKAGE__);
+  
+  package My::Test::X1::Manager;
+  
+  sub my_create_database { ... }
+  sub my_drop_database { ... }
+  
+  sub stop_test_manager { shift->my_drop_database }
+  
+  package My::Test::X1::Context;
+  
+  sub my_insert_data { ... }
+  
+  1;
+
+The C<Test::X1> module is C<use>d without importing any function, then
+the C<Test::X1::define_functions> function is invoked with the
+package, i.e. C<My::Test::X1>.  Additional methods are defined in
+subclasses of test manager and context objects.  Then, in your test
+script, instead of directly C<use>ing C<Test::X1> module, load your
+module:
+
+  use My::Test::X1;
+  my $tm = get_test_manager;
+  $tm->my_create_database;
+  
+  test {
+      my $c = shift;
+      $c->my_insert_data;
+      ...
+  };
+  
+  run_tests;
+
+It is considered as good practice to prepend a short prefix taken from
+the subclass name (C<my_> in this example) to the method names defined
+by subclasses such that future additions to base classes will not
+conflict with them.
+
+Both test manager and context objects are blessed hash references.
+Subclasses can use hashes to save their data associated with objects.
+Such hash keys should be prefixed by subclass names as well.
 
 =head1 EXPORTED FUNCTIONS
 
-XXX
+By C<use>ing the C<Test::X1> module, your test script imports
+following functions:
+
+=over 4
+
+=item $tm = get_test_manager
+
+Obtain the instance of the test manager for the test script.  The test
+manager object is singleton; the function always returns the same
+object.
+
+=item test { CODE } NAME => VALUE, ...; (Test definition)
+
+Define a test.  It must be invoked outside of any other C<test{}>
+function call.  It must be invoked before C<run_tests> function call.
+
+The code block is expected to run one or more subtests.  The number of
+subtests is expected to be equal to the C<n> parameter value, if
+specified.  The code is expected to not throw any exception.
+
+The code block, when invoked, receives the text context object I<$c>
+for the test as the argument.  The C<< $c->done >> method is expected
+to be invoked after all subtests are run.
+
+See also L</Tests> for usage.
+
+After the code block, zero or more name/value pairs can be specified.
+Following name/value pairs are supported:
+
+=over 4
+
+=item n => non-negative integer
+
+Specify the expected number of substests in the test.  If the
+parameter is not specified, number of subtests are not known a priori.
+
+=item name => string or array reference of strings
+
+Name the test.  See C</Naming> for details.
+
+=item wait => anyevent-condvar
+
+Specify a L<AnyEvent::CondVar> object to wait before the execution of
+the test.  See also L</"Waiting for a condvar">.
+
+=back
+
+=item test { CODE } $c, NAME => VALUE, ...; (Test block)
+
+Define a subpart of test (or a block of subtests).  It must be invoked
+within the code part of a test definition.
+
+See also L</"Test blocks">.
+
+The context object for the current test must be specified as the
+argument next to the code block.  Additionally, zero or more
+name/value pairs can be specified.
+
+=over 4
+
+=item name => string or array reference of strings
+
+Name the test block.  See C</Naming> for details.
+
+=back
+
+=back
 
 =head1 TEST MANAGER OBJECT
 
-XXX
-
-The test manager object is singleton; there is at most one test
-manager object at one time.
+The test manager object is the object created for the test script,
+holding references to tests in the test script and monitoring their
+results.  The test manager object is singleton; there is at most one
+test manager object at one time.
 
 The C<Text::X1> class (and its subclasses) exports C<get_test_manager>
 function, which takes no argument, returning the current test manager
 object.
 
+If you are writing simple test scripts, you don't have to directly
+access test manager usually.  The exported functions explained in the
+previous section are in fact invoking appropriate methods of the test
+manager object.
+
+Following methods can be invoked or defined when you are subclassing
+the test manager object:
+
 =over 4
 
-=item $cv = $manager->default_test_wait_cv
+=item $cv = $tm->default_test_wait_cv
 
 This method can be overridden by subclasses, if desired.  This method
 is expected to return an L<AnyEvent> condvar or C<undef>.  The value
 returned by this method is used as the C<wait> parameter value of test
 definitions, when it is not explicitly specified.
 
-=item $manager->stop_test_manager
+=item $hashref = $tm->context_args
+
+This method can be overridden by subclasses, if desired.  This method
+is invoked when test context objects are created.  It is expected to
+return a hash reference containing name/value pairs passed as
+arguments to the C<new> method of the test context class.  By default
+it returns an empty hash reference.
+
+Name/value pairs specified here can be accessed from the test context
+object's blessed hash reference.  See L</"Subclassing"> for their
+usage.
+
+=item $tm->stop_test_manager
 
 This method can be overridden by subclasses, if desired.  This method
 is invoked before the test manager object is destructed.  It is
@@ -404,19 +547,59 @@ manager object.  The C<Test::X1> module does it's best effort to
 invoke the method for the test manager object before Perl goes into
 the global destruction phase.
 
+=item $tm->diag($color, $message)
+
+=item $tm->note($color, $message)
+
+Print a diagnostic message or a note, through C<Test::Builder>'s
+C<diag> or C<note> method.  For their usage, see L<Test::Builder> and
+L<Test::More> documentations.
+
+The first argument must be a color specification for
+L<Term::ANSIColor>, e.g. C<"red"> or C<"">.
+
+The second argument must be a diagnostic or note text, possibly
+utf8-flagged.
+
 =back
 
 =head1 CONTEXT OBJECT
 
-XXX
+The context object is created for each test.  It provides several
+information on the test, which can be used within test for debugging
+purpose.  The context object is passed to the test as the first
+argument.
 
 =over 4
+
+=item $name = $c->test_name
+
+The compound name of the test, in a single character string.  However
+the name is specified (or not), the method returns the single string
+as used in TAP test name part.  See L</Naming>.
 
 =item $data = $c->received_data
 
 Return the data received from the L<AnyEvent> condvar specified to the
 C<wait> parameter of the test definition for the current test.  See
 also L</"Waiting for a condvar">.
+
+=item $c->diag($color, $message)
+
+Print a diagnostic message, through C<Test::Builder>'s C<diag> method.
+For their usage, see L<Test::Builder> and L<Test::More>
+documentations.
+
+The first argument must be a color specification for
+L<Term::ANSIColor>, e.g. C<"red"> or C<"">.  (Please note that this
+argument is ignored in this version.)
+
+The second argument must be a diagnostic text, possibly utf8-flagged.
+
+=item $c->done
+
+Notify that the substests in the test is done.  This method must be
+invoked exactly once for a test.  See also L</"Context objects">.
 
 =back
 
