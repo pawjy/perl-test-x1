@@ -29,21 +29,28 @@ Test::X1 - A lightweight test manager
       );
       ok 1;
   } n => 3, name => ['anyevent', 'callback'];
+
+  test {
+      my $c = shift;
+      ok 1;
+      $c->done;
+  } n => 1;
   
   run_tests;
 
-  ok 1 - (1).1
-  ok 2 - (1).2
-  ok 3 - anyevent.callback (2).1
-  ok 4 - anyevent.callback (2).2
-  not ok 5 - anyevent.callback (2).3
-  #   Failed test 'anyevent.callback (2).3'
+  ok 1 - [1] - [1]
+  ok 2 - [1] - [2]
+  ok 3 - [2] anyevent.callback - [1]
+  ok 4 - [3] - [1]
+  ok 5 - [2] anyevent.callback - [2]
+  not ok 6 - [2] anyevent.callback - [3]
+  #   Failed test '[2] anyevent.callback - [3]'
   #   at lib/Test/X1.pod line 24.
   #          got: '3'
   #     expected: '0'
-  # anyevent.callback (2): 1 test failed
-  1..5
-  # Looks like you failed 1 test of 5.
+  # [2] anyevent.callback: 1 test failed
+  1..6
+  # Looks like you failed 1 test of 6.
 
 =head1 DESCRIPTION
 
@@ -96,11 +103,9 @@ frequently changed in some cases, or it could even be unknown a
 priori, the C<n> option is not required.
 
 The test can be named by specifying the C<name> option to the test
-definition.  If the option is specified, the name of the test is the
-C<name> value, followed by C< (>, the sequential number of the test,
-then C<)> (e.g. C<hoge (1)>).  Otherwise, i.e. if the option is not
-specified, the name of the test is C<(> followed by the sequential
-number of the test, then C<)> (e.g. C<(2)>).
+definition.  The name of the test is C<[n]>, where I<n> is the
+sequential number of the test, followed by space and C<name> value if
+any, e.g. C<[1] hoge> or C<[2]>.
 
 The name of the test is used to construct the name of the subtests in
 the test.
@@ -134,8 +139,8 @@ For example, consider the following test script:
   
   run_tests;
 
-The first test is named as C<abc2 (1)>, while the second test is named
-as C<(2)>.  If the script is executed with no C<TEST_METHOD>, both of
+The first test is named as C<[1] abc2>, while the second test is named
+as C<[2]>.  If the script is executed with no C<TEST_METHOD>, both of
 them are executed.  If the script is executed with C<TEST_METHOD=abc>,
 only the first test is executed.  If the script is executed with
 C<TEST_METHOD=2>, both of them are executed.
@@ -249,7 +254,7 @@ Test block can be named by the C<name> option:
       } $c, name => 'hoge';
   };
   
-  # ok 1 - (1).hoge.1 Test X
+  # ok 1 - [1] - [1] hoge Test X
 
 The C<TEST_BLOCK_SKIP> environment variable can be used to specify the
 regular expression to skip the test blocks with names matching to the
@@ -602,6 +607,10 @@ Notify that the substests in the test is done.  This method must be
 invoked exactly once for a test.  See also L</"Context objects">.
 
 =back
+
+=head1 EXAMPLES
+
+See C<t/*.t> for more examples.
 
 =head1 DEPENDENCY
 

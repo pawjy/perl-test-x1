@@ -62,5 +62,5 @@ use Test::More tests => 3;
 my ($output, $err) = PackedTest->run;
 
 like $output, qr/^1\.\.6$/m;
-like $output, qr/^ok 1 - no wait \(3\)\.1$/m;
+like $output, qr/^ok 1 - \[3\] no wait - \[1\]$/m;
 unlike $output, qr/^not ok/m;

@@ -42,9 +42,9 @@ my ($output, $err) = PackedTest->run;
 
 like $output, qr/^1\.\.3$/m;
 
-like $output, qr/^ok \d+ - ae\.timer \(\d+\)\.1$/m;
+like $output, qr/^ok \d+ - \[1\] ae\.timer - \[1\]$/m;
 
-like $output, qr/^ok \d+ - sync-only \(\d+\)\.1$/m;
-like $output, qr/^ok \d+ - sync-only \(\d+\)\.2$/m;
+like $output, qr/^ok \d+ - \[2\] sync-only - \[1\]$/m;
+like $output, qr/^ok \d+ - \[2\] sync-only - \[2\]$/m;
 
 unlike $output, qr/^not ok/m;

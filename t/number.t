@@ -44,5 +44,5 @@ use Test::More tests => 3;
 my ($output, $err) = PackedTest->run;
 
 like $output, qr/^1\.\.3$/m;
-like $err, qr/^# ae\.timer \(\d+\): Looks like you planned 1 test but ran 3\.$/m;
-like $err, qr/^# sync-only \(\d+\): Looks like you planned 2 tests but ran 3.$/m;
+like $err, qr/^# \[\d+\] ae\.timer: Looks like you planned 1 test but ran 3\.$/m;
+like $err, qr/^# \[\d+\] sync-only: Looks like you planned 2 tests but ran 3.$/m;

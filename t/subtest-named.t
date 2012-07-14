@@ -50,11 +50,11 @@ my ($output, $err) = PackedTest->run;
 
 like $output, qr/^1\.\.4$/m;
 
-like $output, qr/^ok \d+ - ae\.timer \(\d+\)\.1\.sub1$/m;
+like $output, qr/^ok \d+ - \[\d+\] ae\.timer - \[1\] sub1$/m;
 
-like $output, qr/^ok \d+ - sync-only \(\d+\)\.1\.sub2$/m;
-like $output, qr/^ok \d+ - sync-only \(\d+\)\.2$/m;
+like $output, qr/^ok \d+ - \[\d+\] sync-only - \[1\] sub2$/m;
+like $output, qr/^ok \d+ - \[\d+\] sync-only - \[2\]$/m;
 
-like $output, qr/^ok \d+ - \Qname.(empty).(undef).0\E \(\d+\)\Q.block.(empty).(undef).0.1.sub2.(empty).(undef).0\E$/m;
+like $output, qr/^ok \d+ - \[\d+\] \Qname.(empty).(undef).0\E - \Q[1] block.(empty).(undef).0 sub2.(empty).(undef).0\E$/m;
 
 unlike $output, qr/^not ok/m;

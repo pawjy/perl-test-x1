@@ -51,10 +51,10 @@ use Test::More tests => 1;
 my ($output, $err) = PackedTest->run;
 
 is $output, q{1..4
-ok 1 - not waiting (3).1
+ok 1 - [3] not waiting - [1]
 # before cv->send
-ok 2 - (2).1
-ok 3 - (2).2
-ok 4 - (1).1
+ok 2 - [2] - [1]
+ok 3 - [2] - [2]
+ok 4 - [1] - [1]
 # after cv->send
 };

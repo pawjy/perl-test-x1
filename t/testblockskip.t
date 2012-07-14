@@ -33,11 +33,11 @@ my ($output, $err) = PackedTest->run;
 
 like $output, qr/^1\.\.2$/m;
 
-unlike $output, qr/^ok \d+ - hoge \(\d+\)\.foo\.\d+$/m;
-like $output, qr/^ok \d+ - hoge \(\d+\)\.bar\.1$/m;
+unlike $output, qr/^ok \d+ - \[1\] hoge - \[\d+\] foo\.\d+$/m;
+like $output, qr/^ok \d+ - \[1\] hoge - \[\d+\] bar$/m;
 like $output, qr/^ok \d+ \# skip$/m;
 
-like $err, qr/^# hoge \(\d+\)\.foo - subtests skipped\.$/m;
-like $err, qr/^# hoge \(\d+\): Looks like you planned 2 tests but ran 1\.$/m;
+like $err, qr/^# \[1\] hoge - foo - subtests skipped\.$/m;
+like $err, qr/^# \[1\] hoge: Looks like you planned 2 tests but ran 1\.$/m;
 
 unlike $output, qr/^not ok/m;

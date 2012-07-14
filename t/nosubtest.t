@@ -39,7 +39,7 @@ my ($output, $err) = PackedTest->run;
 is $output, q{1..0
 };
 
-is $err, q{# (1): No subtests run!
-# (3): No subtests run!
+is $err, q{# [1]: No subtests run!
+# [3]: No subtests run!
 # No tests run!
 };

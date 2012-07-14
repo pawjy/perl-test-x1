@@ -35,7 +35,7 @@ use Test::More tests => 2;
 my ($output, $err) = PackedTest->run;
 
 is $output, q{1..1
-ok 1 - (1).1
+ok 1 - [1] - [1]
 };
 
 is $err, q{stop_test_manager invoked at custom stop_test_manager line 1.

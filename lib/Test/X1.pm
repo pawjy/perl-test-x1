@@ -115,7 +115,7 @@ sub execute_with_context {
         my $skip = $self->test_block_skip_regexp;
         if ($skip and $name =~ /$skip/) {
             Test::More->builder->skip;
-            $self->diag(undef, sprintf '%s.%s - subtests skipped.',
+            $self->diag(undef, sprintf '%s - %s - subtests skipped.',
                                    $context->test_name, $name);
             return;
         }
@@ -153,8 +153,10 @@ sub run_tests {
                 } else {
                     $name = join '.', 
                         map { defined $_ ? length $_ ? $_ : '(empty)' : '(undef)' } 
-                        $self->{test_context}->next_subtest_name,
                         ref $name eq 'ARRAY' ? @$name : $name;
+                    $name = length $name
+                        ? $self->{test_context}->next_subtest_name . ' ' . $name
+                        : $self->{test_context}->next_subtest_name;
                 }
             } else {
                 $name = $self->{test_context}->next_subtest_name;
@@ -306,14 +308,14 @@ sub test_name {
         $args = $_[1];
     }
     return $self->{test_name} ||= do {
-        my $name = '(' . $args->{id} . ')';
+        my $name = '[' . $args->{id} . ']';
         if (defined $args->{name}) {
             if (ref $args->{name} eq 'ARRAY') {
-                $name = (join '.', map {
+                $name .= ' ' . (join '.', map {
                     defined $_ ? length $_ ? $_ : '(empty)' : '(undef)';
-                } @{$args->{name}}) . ' ' . $name;
+                } @{$args->{name}});
             } else {
-                $name = $args->{name} . ' ' . $name;
+                $name .= ' ' . $args->{name};
             }
         }
         $name;
@@ -324,10 +326,12 @@ sub next_subtest_name {
     my $self = shift;
     my $local_id = $self->{done_tests} || 0;
     $local_id++;
-    return join '.',
-        $self->test_name,
-        (defined $self->{test_block_name} ? $self->{test_block_name} : ()),
-        $local_id;
+    my $name = '[' . $local_id . ']';
+    if (defined $self->{test_block_name} and length $self->{test_block_name}) {
+       return $self->test_name . ' - ' . $name . ' ' . $self->{test_block_name};
+   } else {
+       return $self->test_name . ' - ' . $name;
+   }
 }
 
 sub diag {
@@ -338,7 +342,7 @@ sub diag {
 sub receive_exception {
     my ($self, $err) = @_;
     local $Test::X1::ErrorReportedByX1 = 1;
-    Test::More::is($err, undef, $self->test_name . '.lives_ok');
+    Test::More::is($err, undef, $self->test_name . ' - lives_ok');
 }
 
 sub received_data {

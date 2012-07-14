@@ -68,13 +68,13 @@ use Test::More tests => 1;
 my ($output, $err) = PackedTest->run;
 
 is $output, q{1..7
-ok 1 - not waiting (3).1
-ok 2 - (4).1
-ok 3 - (5).1
-ok 4 - not waiting 2 (6).1
+ok 1 - [3] not waiting - [1]
+ok 2 - [4] - [1]
+ok 3 - [5] - [1]
+ok 4 - [6] not waiting 2 - [1]
 # before cv->send
-ok 5 - (2).1
-ok 6 - (2).2
-ok 7 - (1).1
+ok 5 - [2] - [1]
+ok 6 - [2] - [2]
+ok 7 - [1] - [1]
 # after cv->send
 };
