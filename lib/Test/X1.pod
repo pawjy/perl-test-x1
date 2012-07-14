@@ -216,7 +216,7 @@ More complex example:
   } $c;
 
 Application test framework built on top of the module might define
-additional methods to context objects.  See C</"Subclassing"> on the
+additional methods to context objects.  See L</"Subclassing"> on the
 guideline for extending the context object interface.
 
 =head2 Test blocks
@@ -259,7 +259,7 @@ Test block can be named by the C<name> option:
 The C<TEST_BLOCK_SKIP> environment variable can be used to specify the
 regular expression to skip the test blocks with names matching to the
 pattern.  For example, C<TEST_BLOCK_SKIP=og.$> would prevent the C<ok>
-statement in the example above from executed.  See also C</Naming>.
+statement in the example above from executed.  See also L</Naming>.
 
 =head2 Naming
 
@@ -472,7 +472,7 @@ parameter is not specified, number of subtests are not known a priori.
 
 =item name => string or array reference of strings
 
-Name the test.  See C</Naming> for details.
+Name the test.  See L</Naming> for details.
 
 =item wait => anyevent-condvar
 
@@ -496,7 +496,7 @@ name/value pairs can be specified.
 
 =item name => string or array reference of strings
 
-Name the test block.  See C</Naming> for details.
+Name the test block.  See L</Naming> for details.
 
 =back
 
