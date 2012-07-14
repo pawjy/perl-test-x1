@@ -195,7 +195,7 @@ sub run_tests {
     $schedule_test = sub {
         if (@test) {
             my $test = shift @test;
-            my $test_cv = AE::cv;
+            my $test_cv = AE::cv();
 
             my $test_name;
             my $context = $context_class->new(
