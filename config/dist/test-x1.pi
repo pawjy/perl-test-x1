@@ -1,0 +1,31 @@
+{
+    main_module_name => 'Test::X1',
+    file_names => [qw(
+        lib/Test/X1.pm
+        lib/Test/X1.pod
+        t/test-x1.t
+        config/dist/test-x1.pi
+    )],
+    req_modules => {
+        'AnyEvent' => 0,
+        'Carp' => 0,
+        'Encode' => 0,
+        'Exporter::Lite' => 0,
+        'Scalar::Util' => 0,
+        'Term::ANSIColor' => 0,
+        'Test::Builder' => 0,
+        'Test::More' => 0,
+    },
+    t_req_modules => {
+        'AnyEvent::Util' => 0,
+        'Filter::Util::Call' => 0,
+    },
+    urls => {
+        git => {
+            GitHub => q<https://github.com/wakaba/perl-test-x1>,
+        },
+        ci => {
+            "Travis CI" => q<http://travis-ci.org/wakaba/perl-test-x1>,
+        }, 
+    },
+};

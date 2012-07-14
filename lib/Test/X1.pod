@@ -616,6 +616,9 @@ Latest version of this module is available in the GitHub repository:
 Tests are automatically run by Travis CI
 <http://travis-ci.org/wakaba/perl-test-x1>.
 
+A (likely outdated) tarball copy of the module might be available from
+<http://wakaba.github.com/packages/perl/#Test-X1>.
+
 =head1 AUTHOR
 
 Wakaba (id:wakabatan) <wakabatan@hatena.ne.jp>.

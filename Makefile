@@ -49,4 +49,20 @@ test-deps: pmb-install
 safetest:
 	$(PERL_ENV) $(PROVE) t/**.t
 
+## ------ Packaging ------
+
+GENERATEPM = local/generatepm/bin/generate-pm-package
+
+dist: generatepm
+	$(GENERATEPM) config/dist/test-x1.pi dist/ --generate-json
+
+dist-wakaba-packages: local/wakaba-packages dist
+	cp dist/*.json local/wakaba-packages/data/perl/
+	cp dist/*.tar.gz local/wakaba-packages/perl/
+	cd local/wakaba-packages && $(MAKE) all
+
+local/wakaba-packages: always
+	git clone "git@github.com:wakaba/packages.git" $@ || (cd $@ && git pull)
+	cd $@ && git submodule update --init
+
 always:
