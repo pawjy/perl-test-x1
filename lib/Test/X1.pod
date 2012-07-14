@@ -385,7 +385,7 @@ want to control the lifetime of such temporary objects by relating
 them with lexical scopes of tests.
 
 If you'd like to extend C<Test::X1> for your application C<My>, the
-subclass module, L<My/Test/X1.pm>, would look like:
+subclass module, C<My/Test/X1.pm>, would look like:
 
   package My::Test::X1;
   use Test::X1 ();
