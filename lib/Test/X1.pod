@@ -608,6 +608,14 @@ invoked exactly once for a test.  See also L</"Context objects">.
 
 =back
 
+=head1 LIMITATIONS
+
+Subtests as implemented by L<Test::More> / L<Test::Builder> cannot be
+used in the context of this module as they are globally stateful such
+that concurrent execution of multiple different test introduced by
+this module is incompatibile with them.  Please note that this
+module's concept of subtests is different from those subtests.
+
 =head1 EXAMPLES
 
 See C<t/*.t> for more examples.
