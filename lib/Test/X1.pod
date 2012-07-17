@@ -500,6 +500,13 @@ Name the test block.  See L</Naming> for details.
 
 =back
 
+=item run_tests
+
+Run the defined tests.  The function returns after all the tests has
+been executed and done.  This function must be invoked exactly once in
+the test script.  After the function call, the C<test{}> function (for
+defining a test) must not be invoked.
+
 =back
 
 =head1 TEST MANAGER OBJECT
