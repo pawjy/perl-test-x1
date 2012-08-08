@@ -218,13 +218,20 @@ sub run_tests {
                 };
             };
             my $wait = exists $test->[1]->{wait}
-                ? $test->[1]->{wait} : $self->default_test_wait_cv;
+                ? delete $test->[1]->{wait} : $self->default_test_wait_cv;
             if ($wait) {
                 my $test_cb_old = $wait->cb;
                 $wait->cb(sub {
-                    local $context->{received_data} = $_[0]->recv;
-                    $run_test->();
-                    $test_cb_old->(@_) if $test_cb_old;
+                    $context->{received_data} = $_[0]->recv;
+                    if (UNIVERSAL::can($context->{received_data}, 'context_begin')) {
+                        $context->{received_data}->context_begin(sub {
+                            $run_test->();
+                            $test_cb_old->(@_) if $test_cb_old;
+                        });
+                    } else {
+                        $run_test->();
+                        $test_cb_old->(@_) if $test_cb_old;
+                    }
                 });
             } else {
                 $run_test->();
@@ -389,7 +396,12 @@ sub done {
     $self->{done} = 1;
     $self->{cb}->($self) if $self->{cb};
 
-    $self->{cv}->send;
+    if ($self->{received_data} and
+        UNIVERSAL::can($self->{received_data}, 'context_end')) {
+        $self->{received_data}->context_end(sub { $self->{cv}->send });
+    } else {
+        $self->{cv}->send;
+    }
 }
 
 sub DESTROY {

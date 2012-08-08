@@ -596,6 +596,34 @@ Return the data received from the L<AnyEvent> condvar specified to the
 C<wait> parameter of the test definition for the current test.  See
 also L</"Waiting for a condvar">.
 
+The data can be any value, including the C<undef> value.  If the data
+is an object which has C<context_begin> and C<context_end> methods,
+they are invoked just after and just before the data is associated
+with a context object.  (Please note that the data can be associated
+with multiple context objects when the condvar is specified for
+multiple tests.)  Both methods will receive a code reference as an
+argument.  The methods are expected to invoke the code once the object
+is ready for start or termination of the test.  Typical use case of
+these methods is preparation and termination of a server process used
+within the test.
+
+Example of class for such an object:
+
+  package My::Data;
+  
+  sub context_begin {
+    my ($self, $code) = @_;
+    $self->{rc}++;
+    $code->();
+  }
+  
+  sub context_end {
+    my ($self, $code) = @_;
+    $self->{rc}--;
+    $self->stop_server unless $self->{rc};
+    $code->();
+  }
+
 =item $c->diag($color, $message)
 
 Print a diagnostic message, through C<Test::Builder>'s C<diag> method.
