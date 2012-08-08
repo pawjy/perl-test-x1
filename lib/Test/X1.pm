@@ -224,9 +224,15 @@ sub run_tests {
                 $wait->cb(sub {
                     $context->{received_data} = $_[0]->recv;
                     if (UNIVERSAL::can($context->{received_data}, 'context_begin')) {
+                        my $args = [@_];
                         $context->{received_data}->context_begin(sub {
-                            $run_test->();
-                            $test_cb_old->(@_) if $test_cb_old;
+                            $context->{received_data}->context_begin(sub {
+                                $run_test->();
+                                $test_cb_old->(@$args) if $test_cb_old;
+                            });
+                            if (UNIVERSAL::can($context->{received_data}, 'context_end')) {
+                                $context->{received_data}->context_end(sub { });
+                            }
                         });
                     } else {
                         $run_test->();

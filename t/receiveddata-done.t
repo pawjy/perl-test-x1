@@ -39,7 +39,7 @@ test {
         cb => sub {
             test {
                 undef $timer;
-                ok 1;
+                isa_ok $c->received_data, 'test::Object1';
                 $c->done;
             } $c;
         },
@@ -48,10 +48,9 @@ test {
 
 test {
     my $c = shift;
-    ok 1;
-    is 120, 120;
+    isa_ok $c->received_data, 'test::Object1';
     $c->done;
-} n => 2, wait => $cv;
+} n => 1, wait => $cv;
 
 run_tests;
 
@@ -63,13 +62,16 @@ use Test::More tests => 2;
 
 my ($output, $err) = PackedTest->run;
 
-is $output, q{1..3
+is $output, q{1..2
 # test::Object1 (1)->context_begin
 # test::Object1 (1)->context_begin
-ok 1 - [2] - [1]
-ok 2 - [2] - [2]
 # test::Object1 (1)->context_end
-ok 3 - [1] - [1]
+# test::Object1 (1)->context_begin
+# test::Object1 (1)->context_begin
+ok 1 - [2] - [1] The object isa test::Object1
+# test::Object1 (1)->context_end
+# test::Object1 (1)->context_end
+ok 2 - [1] - [1] The object isa test::Object1
 # test::Object1 (1)->context_end
 # done
 };
