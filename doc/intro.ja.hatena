@@ -1,0 +1,159 @@
+テスト書く時によく Test::Class とか使いますよね。 Test::Class もそんな悪くないですけど、ちょっと使いづらいところとかありますよね。あと Test::Class が“クラス”であるところ、あんまり使いこなせてないですよね。なので要らないものを削って書きやすい感じにしたのを作ってみました。ただ書きやすいだけではなく、 AnyEvent ベースにしてテストの準備やテスト同士の並行処理によってより短時間でテストスクリプトを実行できるようにしています。
+
+- GitHub https://github.com/wakaba/perl-test-x1
+- tarball http://wakaba.github.com/packages/perl/#Test-X1
+
+依存モジュールは Test::Builder, Exporter::Lite, AnyEvent くらいで、 Perl 5.8 以上で動きます。
+
+* 基本形
+
+Test::Class だと
+>|perl|
+package test::MyModule;
+use strict;
+use warnings;
+use base qw(Test::Class);
+use MyModule;
+use Test::More;
+
+sub _hoge : Test(6) {
+    for my $prefix ('', '/touch', '/mobile') {
+        ok mymodule_get "http://hoge$prefix/foo/bar";
+        ok mymodule_post "http://hoge$prefix/foo/baz";
+    }
+}
+
+sub _fuga : Tests {
+    for (keys %MyModule::Fuga) {
+        ok $MyModule::Fuga->{$_};
+    }
+}
+
+__PACKAGE__->runtests;
+
+1;
+||<
+... と書いていたところが Test::X1 では
+>|perl|
+use strict;
+use warnings;
+use Test::X1;
+use MyModule;
+use Test::More;
+
+for my $prefix ('', '/touch', '/mobile') {
+    test {
+        my $c = shift;
+        ok mymodule_get "http://hoge$prefix/foo/bar";
+        ok mymodule_post "http://hoge$prefix/foo/baz";
+        $c->done;
+    } n => 2, name => ['hoge', $prefix];
+}
+
+test {
+    my $c = shift;
+    for (keys %MyModule::Fuga) {
+        ok $MyModule::Fuga->{$_};
+    }
+    $c->done;
+} name => 'fuga';
+
+run_tests;
+||<
+... のようになります。
+
+- テストスクリプトはサブクラスではなく、単なる関数列になります。
+-- パッケージ名を書かなくてよくなります。
+-- 複数パターンのテストをループで生成しやすくなります。
+-- __PACKAGE__-> を書かなくてよくなります。
+-- テスト名が Perl の識別子 (関数名) でなくてもよくなります。
+--- 配列参照によって名前を組として指定できます (出力時に自動的に join します)。
+---- テストがループで生成されている時、名前を指定しやすいです。
+--- テスト名は省略してもいいです。
+---- 無理にテスト名を考える必要はないです。
+--- コピペしたときに名前を直し忘れて重複しても問題なくなります。
+- テストの数はテストの前ではなく、後に書きます。
+-- テストコードを書き終わるまでテスト数はわからないのが普通なので、この方が数を書き入れやすいでしょう。
+- テストの終了は $c->done で明記する必要があります。
+-- ここだけ面倒になっています。その理由はこのあとすぐ。
+
+Test::Class 同様、 Test::X1 でも TEST_METHOD 環境変数で実行するテストの絞り込みが可能です。 for ループでのテスト生成と組み合わせると便利で、特定のパターンの入力の組み合わせだけ指定して実行する、というのが簡単にできます。
+
+* テストの並行実行
+
+テスト対象のコードが AnyEvent ベースで非ブロッキングな感じであれば、そのコールバックを待っている間に次のテストが実行されます。
+
+>|perl|
+test {
+    my $c = shift;
+    my $timer; $timer = AE::timer 10, 0, sub {
+        test {
+            ok 1;
+            $c->done;
+            undef $timer;
+        } $c;
+    };
+} n => 1;
+
+test {
+    my $c = shift;
+    my $timer; $timer = AE::timer 5, 0, sub {
+        test {
+            ok 2;
+            $c->done;
+            undef $timer;
+        } $c;
+    };
+} n => 1;
+||<
+
+... だと下のテストが先に終わります。 (コールバックが実行される順番は自明ではないので、どのテストか明確にするためにコールバック内を test { } $c で括る必要があります。)
+
+ネットワーク待ちなどの間に次のテストを進めておけるので、全体の実行時間の短縮が期待できますね。なお、環境変数 TEST_CONCUR で並行実行数を指定でき、落ちるテストの原因調査時などは便利です。
+
+$c->done をわざわざ明示的に呼ばないといけないのは、このようなテストで終了の時点を自動判定しがたいからです。
+
+* テストの自動命名
+
+テスト名が省略可能だったり、実行順序が入れ替わったりしますが、各テストには自動的に連番で名前が付くので、どれがどれの結果はわかります。
+
+>||
+ok 1 - [2] anyevent.callback - [1]
+ok 2 - [1] - [1] hoge.(empty)
+ok 3 - [1] - [2] hoge./touch
+ok 4 - [2] anyevent.callback - [2]
+not ok 5 - [2] anyevent.callback - [3]
+||<
+
+1つ目の [1] や [2] が test{} の順序で、2つ目の [1] や [2] や [3] がその中の is や ok の順序です。
+
+* 事前準備待ち
+
+テスト用のサーバーが起動するのを待って実行する、というような場合はこう書けます。
+
+>|perl|
+sub start_server {
+    my $cv = AE::cv;
+    ... on_start => sub {
+        $cv->send($server);
+    };
+    return $cv;
+}
+
+$server_cv = start_server;
+
+test {
+    my $c = shift;
+    my $server = $c->received_data;
+    ok $server->hoge;
+    $c->done;
+} wait => $server_cv;
+||<
+
+AnyEvent の condvar オブジェクトを wait 引数で与えると、そのコールバックまで当該テストの実行を遅らせます。また、 $cv->send に引数を指定しておくと、それをテスト内の $c->received_data で取得できます。なのでサーバーが起動するのを待って、そのサーバーのオブジェクトをテストコードから取り出して、それに対してテストを書く、という感じです。
+
+もちろん同じ condvar を複数のテストが待つこともできますし、待つテストと待たないテストが混在しても構いません。その場合待たないテストが先に実行されます。
+
+* 全体の初期化と後始末
+
+テストスクリプト全体の初期化と後始末 (Test::Class でいう Test(startup) と Test(shutdown)) は、特別な方法はなく、普通に run_tests の前と後に書けばいいだけです。
