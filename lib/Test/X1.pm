@@ -301,6 +301,13 @@ sub stop_test_manager {
 }
 
 sub DESTROY {
+    {
+        local $@;
+        eval { die };
+        if ($@ =~ /during global destruction/) {
+            warn "Possible memory leak detected";
+        }
+    }
     $_[0]->stop_test_manager;
 }
 
@@ -412,6 +419,14 @@ sub done {
 
 sub DESTROY {
     my $self = shift;
+    #${^GLOBAL_PHASE}
+    {
+        local $@;
+        eval { die };
+        if ($@ =~ /during global destruction/) {
+            warn "Possible memory leak detected";
+        }
+    }
     unless ($self->{done}) {
         die "Can't continue test anymore (an exception is thrown before the test?)\n" unless $self->{cv};
 
