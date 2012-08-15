@@ -24,6 +24,7 @@ Test::X1 - A lightweight test manager
                   is 3, 0;
                   undef $timer;
                   $c->done;
+                  undef $c;
               } $c;
           },
       );
@@ -186,12 +187,20 @@ at the end of the last callback:
           test {
               ...;
               $c->done;
+              undef $c;
           } $c;
       };
   } $c;
 
-(The inner C<test{}> statement is a test block; See L</"Test blocks">
-for details.)
+The inner C<test{}> statement is a test block; See L</"Test blocks">
+for details.  Also note that C<undef $c> is executed after C<<
+$c->done >> is invoked.  Though this is not required for this
+particular case, it might be a good practice to C<undef> the context
+object reference when it is C<done>'ed within a callback function as
+it would delete a possible loop reference when the context object has
+the reference to some object and the object then contains the
+reference to the callback function which contains the reference to the
+context object.
 
 More complex example:
 
@@ -349,6 +358,7 @@ Consider the following test script fragment:
           test {
               is $_[0], 'hoge', 'Subtest #2.2';
               $c->done;
+              undef $c;
           } $c;
       });
   };
