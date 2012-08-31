@@ -220,33 +220,29 @@ sub run_tests {
             my $wait = exists $test->[1]->{wait}
                 ? delete $test->[1]->{wait} : $self->default_test_wait_cv;
             if ($wait) {
+                $cv->begin;
                 my $test_cb_old = $wait->cb;
                 $wait->cb(sub {
                     $context->{received_data} = $_[0]->recv;
                     if (UNIVERSAL::can($context->{received_data}, 'context_begin')) {
                         my $args = [@_];
                         $context->{received_data}->context_begin(sub {
-                            my $cv = AE::cv();
-                            $cv->begin;
-                            $cv->begin;
                             $context->{received_data}->context_begin(sub {
-                                $cv->end;
-                            });
-                            if (UNIVERSAL::can($context->{received_data}, 'context_end')) {
-                                $cv->begin;
-                                $context->{received_data}->context_end(sub {
-                                    $cv->end;
-                                });
-                            }
-                            $cv->end;
-                            $cv->cb(sub {
                                 $run_test->();
                                 $test_cb_old->(@$args) if $test_cb_old;
+                                if (UNIVERSAL::can($context->{received_data}, 'context_end')) {
+                                    $context->{received_data}->context_end(sub {
+                                        $cv->end;
+                                    });
+                                } else {
+                                    $cv->end;
+                                }
                             });
                         });
                     } else {
                         $run_test->();
                         $test_cb_old->(@_) if $test_cb_old;
+                        $cv->end;
                     }
                 });
             } else {
