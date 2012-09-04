@@ -9,8 +9,16 @@ sub define_functions ($) {
     push @{$CLASS . '::EXPORT'}, qw(test run_tests get_test_manager);
     eval sprintf q{
         package %s;
-        use Exporter::Lite;
         use Scalar::Util qw(weaken);
+
+        sub import (;@) {
+            my $orig = shift;
+            my ($copy) = caller;
+            no strict 'refs';
+            for my $method (@{$orig . '::EXPORT'}) {
+                *{$copy . '::' . $method} = $orig->can($method);
+            }
+        }
 
         sub get_test_manager () {
             $%s::manager ||= %s::Manager->new;

@@ -1,6 +1,5 @@
 AnyEvent
 Carp
-Exporter::Lite
 Scalar::Util
 Term::ANSIColor
 Test::Builder
