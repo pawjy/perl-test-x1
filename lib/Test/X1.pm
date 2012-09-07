@@ -227,6 +227,7 @@ sub run_tests {
             };
             my $wait = exists $test->[1]->{wait}
                 ? delete $test->[1]->{wait} : $self->default_test_wait_cv;
+            $wait = $wait->() if ref $wait eq 'CODE';
             if ($wait) {
                 $cv->begin;
                 my $test_cb_old = $wait->cb;

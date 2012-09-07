@@ -323,6 +323,22 @@ $c->received_data >> method of the context object.
       $c->done;
   } wait => $cv;
 
+Instead of a codevar object, a code reference which, when invoked,
+returns a condvar object or the C<undef> value can be specified as the
+C<wait> value.  This practice is rather recommended as it would
+prevend the condvar object from being instantiated when the target
+tests are filtered by C<TEST_METHOD> environment variable.  For
+example,
+
+  test {
+      my $c = shift;
+      is $c->received_data, 123;
+      $c->done;
+  } wait => sub { start_server_and_return_cv () };
+
+... does not start the server for the test when the test is excluded
+from the execution.
+
 The default C<wait> value, used when no C<wait> parameter is
 explicitly specified to test definitions, can be provided by
 subclassing (see L</"Subclassing"> for details) and defining C<<
