@@ -330,7 +330,7 @@ package Test::X1::Context;
 
 sub new {
     my $class = shift;
-    return bless {@_}, $class;
+    return bless {@_, pid => $$}, $class;
 }
 
 sub test_name {
@@ -434,6 +434,7 @@ sub done {
 
 sub DESTROY {
     my $self = shift;
+    return unless ($self->{pid} || 0) == $$;
     #${^GLOBAL_PHASE}
     {
         local $@;
