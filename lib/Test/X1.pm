@@ -1,7 +1,10 @@
 package Test::X1;
 use strict;
 use warnings;
+no warnings 'utf8';
+use warnings FATAL => 'recursion';
 our $VERSION = '1.0';
+use AnyEvent;
 
 sub define_functions ($) {
     my $CLASS = shift;
@@ -258,7 +261,11 @@ sub run_tests {
                 $run_test->();
             }
 
-            $test_cv->cb($schedule_test);
+            $test_cv->cb(sub {
+                AE::postpone {
+                    $schedule_test->();
+                };
+            });
         } else {
             $cv->end;
         }

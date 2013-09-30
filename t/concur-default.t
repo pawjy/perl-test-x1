@@ -21,10 +21,12 @@ for my $i (0..6) {
         warn "cv[$i] test sync section\n";
         $cv[$i]->cb(sub {
             warn "cv[$i] test async section\n";
-            ok 1;
+            test {
+                ok 1;
+            } $c;
             $c->done;
         });
-    } n => 0;
+    } n => 1;
 }
 
 my $timer = AE::timer 0.2, 0, sub {
@@ -40,14 +42,14 @@ use Test::More tests => 2;
 
 my ($output, $err) = PackedTest->run;
 
-is $output, q{ok 1
-ok 2
-ok 3
-ok 4
-ok 5
-ok 6
-ok 7
-1..7
+is $output, q{1..7
+ok 1 - [1] - [1]
+ok 2 - [2] - [1]
+ok 3 - [3] - [1]
+ok 4 - [4] - [1]
+ok 5 - [5] - [1]
+ok 6 - [6] - [1]
+ok 7 - [7] - [1]
 };
 
 is $err, q{cv[0] test sync section
@@ -57,12 +59,12 @@ cv[3] test sync section
 cv[4] test sync section
 Send...
 cv[0] test async section
-cv[5] test sync section
 cv[1] test async section
-cv[6] test sync section
 cv[2] test async section
 cv[3] test async section
 cv[4] test async section
+cv[5] test sync section
 cv[5] test async section
+cv[6] test sync section
 cv[6] test async section
 };
