@@ -1,10 +1,6 @@
-File::ShareDir::Install~0.04
-inc::latest~0.4001
-AE
-Exporter::Lite~0.02
-Test::Builder~0.98
-List::Util~1.25
-Term::ANSIColor~3.02
-Filter::cpp~1.43
-ExtUtils::ParseXS~3.15
-Carp~1.26
+Test::More~0.98
+Scalar::Util~1.32
+Filter::Util::Call~1.49
+Term::ANSIColor~4.02
+AnyEvent~7.05
+Carp~1.32

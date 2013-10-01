@@ -1,68 +1,36 @@
-# Running tests:
-#     $ make test
-# Install required Perl modules into ./local/
-#     $ make pmb-install
-# Update list of required Perl modules:
-#     1. Edit config/perl/modules.txt
-#     2. Run "make pmb-update"
-#     3. Commit modified files
+# -*- Makefile -*-
 
 all:
 
-# ------ Setup ------
+## ------ Setup ------
 
 WGET = wget
-PERL = perl
-PERL_VERSION = latest
-PERL_PATH = $(abspath local/perlbrew/perls/perl-$(PERL_VERSION)/bin)
-REMOTEDEV_HOST = 
-REMOTEDEV_PERL_VERSION = $(PERL_VERSION)
+GIT = git
 
-PMB_PMTAR_REPO_URL = 
-PMB_PMPP_REPO_URL = 
+deps: git-submodules pmbp-install
 
-Makefile-setupenv: Makefile.setupenv
-	$(MAKE) --makefile Makefile.setupenv setupenv-update \
-	    SETUPENV_MIN_REVISION=20120334
+git-submodules:
+	$(GIT) submodule update --init
 
-Makefile.setupenv:
-	$(WGET) -O $@ https://raw.github.com/wakaba/perl-setupenv/master/Makefile.setupenv
+local/bin/pmbp.pl:
+	mkdir -p local/bin
+	$(WGET) -O $@ https://raw.github.com/wakaba/perl-setupenv/master/bin/pmbp.pl
+pmbp-upgrade: local/bin/pmbp.pl
+	perl local/bin/pmbp.pl --update-pmbp-pl
+pmbp-update: git-submodules pmbp-upgrade
+	perl local/bin/pmbp.pl --update
+pmbp-install: pmbp-upgrade
+	perl local/bin/pmbp.pl --install \
+            --create-perl-command-shortcut perl \
+            --create-perl-command-shortcut prove
 
-lperl local-perl perl-version perl-exec \
-pmb-update pmb-install \
-generatepm: %: Makefile-setupenv
-	$(MAKE) --makefile Makefile.setupenv $@ \
-            REMOTEDEV_HOST=$(REMOTEDEV_HOST) \
-            REMOTEDEV_PERL_VERSION=$(REMOTEDEV_PERL_VERSION) \
-	    PMB_PMTAR_REPO_URL=$(PMB_PMTAR_REPO_URL) \
-	    PMB_PMPP_REPO_URL=$(PMB_PMPP_REPO_URL)
+## ------ Tests ------
 
-# ------ Test ------
+PROVE = ./prove
 
-PERL_ENV = PATH=$(PERL_PATH):$(PATH) PERL5LIB=$(shell cat config/perl/libs.txt)
-PROVE = prove
+test: test-deps test-main
 
-test: test-deps safetest
+test-deps: deps
 
-test-deps: pmb-install
-
-safetest:
-	$(PERL_ENV) $(PROVE) t/**.t
-
-## ------ Packaging ------
-
-GENERATEPM = local/generatepm/bin/generate-pm-package
-
-dist: generatepm
-	$(GENERATEPM) config/dist/test-x1.pi dist/ --generate-json
-
-dist-wakaba-packages: local/wakaba-packages dist
-	cp dist/*.json local/wakaba-packages/data/perl/
-	cp dist/*.tar.gz local/wakaba-packages/perl/
-	cd local/wakaba-packages && $(MAKE) all
-
-local/wakaba-packages: always
-	git clone "git@github.com:wakaba/packages.git" $@ || (cd $@ && git pull)
-	cd $@ && git submodule update --init
-
-always:
+test-main:
+	$(PROVE) t/*.t
