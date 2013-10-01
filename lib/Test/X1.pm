@@ -3,7 +3,7 @@ use strict;
 use warnings;
 no warnings 'utf8';
 use warnings FATAL => 'recursion';
-our $VERSION = '1.0';
+our $VERSION = '2.0';
 use AnyEvent;
 
 sub define_functions ($) {
@@ -231,6 +231,11 @@ sub run_tests {
             my $wait = exists $test->[1]->{wait}
                 ? delete $test->[1]->{wait} : $self->default_test_wait_cv;
             $wait = $wait->() if ref $wait eq 'CODE';
+            if (ref $wait eq 'HASH') {
+                $self->{destroy_cvs}->{$wait->{destroy_as_cv}} = $wait->{destroy_as_cv}
+                    if $wait->{destroy_as_cv};
+                $wait = $wait->{cv};
+            }
             if ($wait) {
                 $cv->begin;
                 my $test_cb_old = $wait->cb;
@@ -277,9 +282,22 @@ sub run_tests {
 
     $cv->end;
 
+    # Run tests
     $cv->recv;
-    $self->terminate_test_env;
+
     delete $self->{test_context};
+    {
+        # XXX The |destory_cvs| callback should be invoked as soon as
+        # all relevant tests has been run.
+        my $cv = AE::cv;
+        $cv->begin;
+        for (grep { $_ } values %{$self->{destroy_cvs} or {}}) {
+            $cv->begin;
+            $_->()->cb(sub { $cv->end });
+        }
+        $cv->end;
+        $cv->recv;
+    }
 
     Test::More::done_testing()
             unless $test_count and not $more_tests;
@@ -295,11 +313,6 @@ sub default_test_wait_cv {
 
 sub context_args {
     return {};
-}
-
-# XXX unused?
-sub terminate_test_env {
-    #
 }
 
 sub diag {

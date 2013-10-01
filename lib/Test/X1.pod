@@ -348,6 +348,26 @@ C<undef> value for the C<wait> parameter of test definitions, this
 default can be cleared.  (See C<t/cv-wait-default.t> test script for
 examples.)
 
+The C<wait> value can also be a hash reference (or a code reference
+which returns a hash reference).  The C<cv> key of the hash reference
+can have the condvar object as the value.  The C<destroy_as_cv> key
+can contain the code reference, which will be invoked after relevant
+tests have been run.  The code should be useful to stop the server
+started by the C<cv> condvar's preparation, for example.  The code
+must return a condvar object, whose callback will be invoked after the
+destroy process has been done.  The same C<destroy_as_cv> code is
+invoked only once.  If the code is specified as part of the C<wait>
+value of multiple tests, it is only invoked after all of them has been
+executed.  Example:
+
+  test {
+      ...
+  } wait => {cv => sub {
+      return $server->start_as_cv;
+  }, destroy_as_cv => sub {
+      return $server->stop_as_cv;
+  }};
+
 =head2 Concurrent execution of tests
 
 Thanks to L<AnyEvent> framework, tests (as defined by outermost
@@ -692,10 +712,7 @@ Latest version of this module is available in the GitHub repository:
 <https://github.com/wakaba/perl-test-x1>.
 
 Tests are automatically run by Travis CI
-<http://travis-ci.org/wakaba/perl-test-x1>.
-
-A (likely outdated) tarball copy of the module might be available from
-<http://wakaba.github.com/packages/perl/#Test-X1>.
+<https://travis-ci.org/wakaba/perl-test-x1>.
 
 =head1 AUTHOR
 
@@ -708,9 +725,9 @@ C<Test::Class>, C<Test::More>.
 
 =head1 LICENSE
 
-Copyright 2012 Hatena <http://www.hatena.ne.jp/>.
+Copyright 2012-2013 Hatena <http://www.hatena.ne.jp/>.
 
-Copyright 2012 Wakaba <w@suika.fam.cx>.
+Copyright 2012 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
