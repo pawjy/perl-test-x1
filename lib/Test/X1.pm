@@ -66,6 +66,7 @@ sub new {
         tests => [],
         #test_started
         #test_context
+        pid => $$,
     }, $_[0];
 }
 
@@ -336,6 +337,7 @@ sub stop_test_manager {
 }
 
 sub DESTROY {
+    return unless ($_[0]->{pid} || 0) == $$;
     {
         local $@;
         eval { die };
