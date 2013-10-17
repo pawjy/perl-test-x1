@@ -39,6 +39,6 @@ ok 1 - [1] - [1]
 };
 
 like $err, qr{^stop_test_manager invoked at custom stop_test_manager line 1.
-Possible memory leak detected at .*?/Test/X1.pm line \d+ during global destruction.
+Possible memory leak detected \(Test::X1::Manager\)
 stop_test_manager invoked at custom stop_test_manager line 1 during global destruction.
 $};

@@ -26,6 +26,10 @@ use AnyEvent;
         print "# test::Object1 ($self->{id})->context_end\n";
         $cb->();
     }
+
+    sub DESTROY {
+        warn "# test::Object1 ($_[0]->{id}) DESTROY";
+    }
 }
 
 my $i = 0;
@@ -41,6 +45,7 @@ test {
                 undef $timer;
                 isa_ok $c->received_data, 'test::Object1';
                 $c->done;
+                undef $c;
             } $c;
         },
     );
@@ -75,4 +80,5 @@ ok 2 - [1] - [1] The object isa test::Object1
 # test::Object1 (1)->context_end
 # done
 };
-is $err, '';
+is $err, q{# test::Object1 (1) DESTROY at }.__FILE__.q{ line 31.
+};

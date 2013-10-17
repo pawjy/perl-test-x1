@@ -3,7 +3,7 @@ use strict;
 use warnings;
 no warnings 'utf8';
 use warnings FATAL => 'recursion';
-our $VERSION = '2.0';
+our $VERSION = '3.0';
 use AnyEvent;
 
 sub define_functions ($) {
@@ -199,7 +199,7 @@ sub run_tests {
     $cv->begin(sub {
         undef $schedule_test;
         $_[0]->send;
-    });
+    }); # (b)
 
     my $context_args = $self->context_args;
     my $context_class = ref $self;
@@ -211,6 +211,7 @@ sub run_tests {
             my $test = shift @test;
             my $test_cv = AE::cv();
 
+            my $run_test;
             my $test_name;
             my $context = $context_class->new(
                 args => $test->[1],
@@ -220,47 +221,84 @@ sub run_tests {
                 },
                 %$context_args,
             );
-            my $run_test = sub {
+            my $run_timeout = $test->[1]->{timeout} || 30;
+            my $run_timer;
+            $run_test = sub {
+                $run_timer = AE::timer $run_timeout, 0, sub {
+                    unless ($context->{done}) {
+                        $context->receive_exception("Test: Timeout ($run_timeout)");
+                        $context->done;
+                    }
+                    undef $run_timer;
+                };
                 local $self->{test_context} = $context;
                 eval {
                     $test->[0]->($context);
                     1;
                 } or do {
                     $context->receive_exception($@);
+                    undef $run_timer;
                 };
             };
             my $wait = exists $test->[1]->{wait}
                 ? delete $test->[1]->{wait} : $self->default_test_wait_cv;
             $wait = $wait->() if ref $wait eq 'CODE';
+            my $wait_timeout = 60;
             if (ref $wait eq 'HASH') {
                 $self->{destroy_cvs}->{$wait->{destroy_as_cv}} = $wait->{destroy_as_cv}
                     if $wait->{destroy_as_cv};
+                $wait_timeout = $wait->{timeout} || $wait_timeout;
                 $wait = $wait->{cv};
             }
             if ($wait) {
-                $cv->begin;
+                $cv->begin; # (a)
+                $context->{wait_timeout} = $wait_timeout;
+                my $wait_timer; $wait_timer = AE::timer $wait_timeout, 0, sub {
+                    $context->receive_exception("Wait: Timeout ($wait_timeout)");
+                    $context->done;
+                    $cv->end; # (a)
+                    undef $wait_timer;
+                };
                 my $test_cb_old = $wait->cb;
                 $wait->cb(sub {
                     $context->{received_data} = $_[0]->recv;
                     if (UNIVERSAL::can($context->{received_data}, 'context_begin')) {
                         my $args = [@_];
+                        return unless $wait_timer;
+                        $wait_timer = AE::timer $wait_timeout, 0, sub {
+                            $context->receive_exception("context_begin: Timeout ($wait_timeout)");
+                            $cv->end; # (a)
+                            $context->done;
+                            undef $wait_timer;
+                        };
                         $context->{received_data}->context_begin(sub {
+                            return unless $wait_timer;
                             $context->{received_data}->context_begin(sub {
+                                return unless $wait_timer;
+                                undef $wait_timer;
                                 $run_test->();
                                 $test_cb_old->(@$args) if $test_cb_old;
                                 if (UNIVERSAL::can($context->{received_data}, 'context_end')) {
+                                    $wait_timer = AE::timer $wait_timeout, 0, sub {
+                                        $context->receive_exception("context_end: Timeout ($wait_timeout)");
+                                        $cv->end; # (a)
+                                        undef $wait_timer;
+                                    };
                                     $context->{received_data}->context_end(sub {
-                                        $cv->end;
+                                        return unless $wait_timer;
+                                        undef $wait_timer;
+                                        $cv->end; # (a)
                                     });
                                 } else {
-                                    $cv->end;
+                                    $cv->end; # (a)
                                 }
                             });
                         });
                     } else {
+                        undef $wait_timer;
                         $run_test->();
                         $test_cb_old->(@_) if $test_cb_old;
-                        $cv->end;
+                        $cv->end; # (a)
                     }
                 });
             } else {
@@ -270,33 +308,36 @@ sub run_tests {
             $test_cv->cb(sub {
                 AE::postpone {
                     $schedule_test->();
+                    delete $context->{received_data};
+                    undef $context;
                 };
             });
         } else {
-            $cv->end;
+            $cv->end; # (e)
         }
-    };
+    }; # $schedule_test
     for (1..($ENV{TEST_MAX_CONCUR} || 5)) {
-        $cv->begin;
+        $cv->begin; # (e)
         $schedule_test->();
     }
 
-    $cv->end;
+    $cv->end; # (b)
 
     # Run tests
     $cv->recv;
 
     delete $self->{test_context};
+    undef $schedule_test;
     {
         # XXX The |destory_cvs| callback should be invoked as soon as
         # all relevant tests has been run.
         my $cv = AE::cv;
-        $cv->begin;
+        $cv->begin; # (c)
         for (grep { $_ } values %{$self->{destroy_cvs} or {}}) {
-            $cv->begin;
-            $_->()->cb(sub { $cv->end });
+            $cv->begin; # (d)
+            $_->()->cb(sub { $cv->end }); # (d)
         }
-        $cv->end;
+        $cv->end; # (c)
         $cv->recv;
     }
 
@@ -306,6 +347,7 @@ sub run_tests {
         $self->diag(undef, sprintf "Looks like you skipped %d test%s.",
                                $skipped_tests, $skipped_tests == 1 ? '' : 's');
     }
+    undef $self;
 }
 
 sub default_test_wait_cv {
@@ -342,7 +384,7 @@ sub DESTROY {
         local $@;
         eval { die };
         if ($@ =~ /during global destruction/) {
-            warn "Possible memory leak detected";
+            warn "Possible memory leak detected (Test::X1::Manager)\n";
         }
     }
     $_[0]->stop_test_manager;
@@ -448,7 +490,18 @@ sub done {
 
     if ($self->{received_data} and
         UNIVERSAL::can($self->{received_data}, 'context_end')) {
-        $self->{received_data}->context_end(sub { $self->{cv}->send });
+        ## If there is received data, the test always has the "wait"
+        ## such that the |wait_timeout| has been set.
+        my $wait_timeout = $self->{wait_timeout};
+        my $wait_timer; $wait_timer = AE::timer $wait_timeout, 0, sub {
+            $self->receive_exception("context_end: Timeout ($wait_timeout)");
+            $self->{cv}->send;
+            undef $wait_timer;
+        };
+        $self->{received_data}->context_end(sub {
+            undef $wait_timer;
+            $self->{cv}->send;
+        });
     } else {
         $self->{cv}->send;
     }
@@ -462,7 +515,7 @@ sub DESTROY {
         local $@;
         eval { die };
         if ($@ =~ /during global destruction/) {
-            warn "Possible memory leak detected";
+            warn "Possible memory leak detected (Test::X1::Context)\n";
         }
     }
     unless ($self->{done}) {

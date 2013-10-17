@@ -368,6 +368,15 @@ executed.  Example:
       return $server->stop_as_cv;
   }};
 
+Additionally, the C<timeout> value can also be specified in the
+C<wait> hash reference.  Its default value is 60.  After the seconds
+of the timeout elapse, if the C<wait> condvar's callback is not
+invoked, the associated test fails.  The timeout value is also applied
+to the C<context_begin> and C<context_end> methods of the C<<
+$c->received_data >> object; These methods have to invoke the callback
+before the timeout.  Please note that they should not block the entire
+script, otherwise the timeout will not work.
+
 =head2 Concurrent execution of tests
 
 Thanks to L<AnyEvent> framework, tests (as defined by outermost
@@ -416,6 +425,16 @@ concurrently executed by C<Test::X1>.  Setting a number to the
 C<TEST_MAX_CONCUR> environment variable can override this default, if
 desired.  C<TEST_MAX_CONCUR=1> disables this concurrency, which will
 be useful for debugging purposes in particular.
+
+=head2 More test option
+
+The C<timeout> option of the test definition (not a test block)
+specifies the timeout in seconds.  The test must end within the
+seconds after the test is started (not inlcuding any C<wait>,
+C<context_before>, and C<context_after> processing).  The default
+value is 60.  Note that the timeout might be applied as intended if
+the test blocks the script, by, e.g., blocking I/O access, C<system>,
+or C<sleep>.
 
 =head2 Subclassing
 
