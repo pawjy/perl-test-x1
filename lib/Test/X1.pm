@@ -237,6 +237,7 @@ sub run_tests {
                     1;
                 } or do {
                     $context->receive_exception($@);
+                    $context->done;
                     undef $run_timer;
                 };
             };
