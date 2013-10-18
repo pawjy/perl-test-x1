@@ -1,5 +1,5 @@
-Test::More~0.98
-Scalar::Util~1.32
+Test::More~0.99
+Scalar::Util~1.34
 Filter::Util::Call~1.49
 Term::ANSIColor~4.02
 AnyEvent~7.05
