@@ -73,10 +73,10 @@ is $output, q{1..2
 # test::Object1 (1)->context_end
 # test::Object1 (1)->context_begin
 # test::Object1 (1)->context_begin
-ok 1 - [2] - [1] The object isa test::Object1
+ok 1 - [2] - [1] An object of class 'test::Object1' isa 'test::Object1'
 # test::Object1 (1)->context_end
 # test::Object1 (1)->context_end
-ok 2 - [1] - [1] The object isa test::Object1
+ok 2 - [1] - [1] An object of class 'test::Object1' isa 'test::Object1'
 # test::Object1 (1)->context_end
 # done
 };
