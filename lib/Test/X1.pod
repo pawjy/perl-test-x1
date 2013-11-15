@@ -67,9 +67,13 @@ running tests are exported to the caller package.  Note that it only
 exports test management functions.  You have to import or define your
 favorite test assertion sets such as L<Test::More> or
 L<Test::Differences> by yourself.  The C<Test::X1> test framework only
-assumes that you are writing L<Test::Builder>-based test script; As
+assumes that you are writing a L<Test::Builder>-based test script.  As
 long as test assertion functions are build upon L<Test::Builder>'s
-framework, you can select any random test module.
+framework, you can choose any test module.
+
+Note that some test modules are incompatible with L<AnyEvent>-based
+asynchronous invocation of callbacks.  For example, C<subtest>s of
+L<Test::More> does not work well.
 
 =head2 Tests
 
@@ -176,10 +180,10 @@ before the end of the test code:
       ... tests ...
       
       $c->done;
-  } $c;
+  };
 
 If there are callbacks, the C<< $c->done >> method should be invoked
-at the end of the last callback:
+at the end of the last callback (the one invoked finally):
 
   test {
       my $c = shift;
@@ -190,7 +194,7 @@ at the end of the last callback:
               undef $c;
           } $c;
       };
-  } $c;
+  };
 
 The inner C<test{}> statement is a test block; See L</"Test blocks">
 for details.  Also note that C<undef $c> is executed after C<<
@@ -222,7 +226,7 @@ More complex example:
       ...
       
       $cv->end;
-  } $c;
+  };
 
 Application test framework built on top of the module might define
 additional methods to context objects.  See L</"Subclassing"> on the
