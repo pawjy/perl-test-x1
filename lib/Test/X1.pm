@@ -149,6 +149,10 @@ sub run_tests {
         }
     }
 
+    my $builder = Test::More->builder;
+    binmode $builder->output, ":utf8";
+    binmode $builder->failure_output, ":utf8";
+    binmode $builder->todo_output, ":utf8";
     Test::More::plan(tests => $test_count) if $test_count and not $more_tests;
 
     no warnings 'redefine';
