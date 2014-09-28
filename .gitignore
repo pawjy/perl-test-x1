@@ -7,3 +7,6 @@
 /cin
 /config/perl/libs.txt
 /deps/
+/perl
+/prove
+/plackup

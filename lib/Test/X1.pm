@@ -5,6 +5,7 @@ no warnings 'utf8';
 use warnings FATAL => 'recursion';
 our $VERSION = '3.0';
 use AnyEvent;
+push our @CARP_NOT, qw(Test::X1::Manager);
 
 sub define_functions ($) {
     my $CLASS = shift;
@@ -96,6 +97,11 @@ sub define_test {
         $context_class =~ s/::Manager$/::Context/;
         my $name = $context_class->test_name(\%args);
         return unless $name =~ /$methods/;
+    }
+
+    if (Carp::shortmess =~ / at (.+) line ([0-9]+)\.?$/s) {
+        $args{defined_location_file} = $1;
+        $args{defined_location_line} = $2;
     }
 
     push @{$self->{tests}}, [$code, \%args];
@@ -426,6 +432,15 @@ sub test_name {
     };
 }
 
+sub test_location ($) {
+  my $self = shift;
+  my $file = $self->{args}->{defined_location_file};
+  $file = '(unknown)' unless defined $file;
+  $file =~ tr/\x0D\x0A\x22/\x20\x20\x20/;
+  my $line = 0+($self->{args}->{defined_location_line} || 0);
+  return ($file, $line);
+} # test_location
+
 sub next_subtest_name {
     my $self = shift;
     my $local_id = $self->{done_tests} || 0;
@@ -443,11 +458,21 @@ sub diag {
     Test::More->builder->diag($self->test_name . ': ' . $msg);
 }
 
-sub receive_exception {
-    my ($self, $err) = @_;
-    local $Test::X1::ErrorReportedByX1 = 1;
-    Test::More::is($err, undef, $self->test_name . ' - lives_ok');
-}
+sub receive_exception ($$) {
+  my ($self, $err) = @_;
+  $self->_subtest_failed ($err, undef, 'lives_ok');
+} # receive_exception
+
+sub _subtest_failed ($$$$) {
+  my ($self, $v1, $v2, $name) = @_;
+  local $Test::X1::ErrorReportedByX1 = 1;
+  my ($file, $line) = $self->test_location;
+  my $code = sprintf qq{#line %d "%s"\n%s},
+      $line, $file,
+      q{Test::More::is($v1, $v2, $self->test_name . ' - ' . $name);};
+  eval $code;
+  die $@ if $@;
+} # _subtest_failed
 
 sub received_data {
     return $_[0]->{received_data};
@@ -463,8 +488,7 @@ sub cb {
 sub done {
     my $self = shift;
     if ($self->{done}) {
-        local $Test::X1::ErrorReportedByX1 = 1;
-        Test::More::is('done', undef, $self->test_name . ' $c->done');
+        $self->_subtest_failed ('done', undef, '$c->done');
         $self->diag(undef, '$c->done is called more than once in a test');
         return;
     }
@@ -525,9 +549,7 @@ sub DESTROY {
     }
     unless ($self->{done}) {
         die "Can't continue test anymore (an exception is thrown before the test?)\n" unless $self->{cv};
-
-        local $Test::X1::ErrorReportedByX1 = 1;
-        Test::More::is(undef, 'done', $self->test_name . ' $c->done');
+        $self->_subtest_failed (undef, 'done', '$c->done');
         $self->diag(undef, "\$c->done is not invoked (or |die|d within test?)");
         $self->done;
     }

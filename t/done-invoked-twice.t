@@ -38,18 +38,19 @@ run_tests;
 
 !!1;
 
-use Test::More tests => 8;
+use Test::More tests => 9;
 
 my ($output, $err) = PackedTest->run;
 
 like $output, qr/^1\.\.3$/m;
 
 like $output, qr/^ok \d+ - \[\d+\] ae\.timer - \[1\]$/m;
-like $output, qr/^not ok \d+ - \[\d+\] ae\.timer \$c->done$/m;
+like $output, qr/^not ok \d+ - \[\d+\] ae\.timer - \$c->done$/m;
 
 like $output, qr/^ok \d+ - \[\d+\] sync-only - \[1\]$/m;
 like $output, qr/^ok \d+ - \[\d+\] sync-only - \[2\]$/m;
-like $output, qr/^not ok \d+ - \[\d+\] sync-only \$c->done$/m;
+like $output, qr/^not ok \d+ - \[\d+\] sync-only - \$c->done$/m;
 
 like $err, qr/^# Looks like you planned 3 tests but ran 5\.$/m;
 like $err, qr/^# Looks like you failed 2 tests of 5 run\.$/m;
+unlike $err, qr/X1.pm/;

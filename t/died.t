@@ -36,7 +36,7 @@ run_tests;
 
 !!1;
 
-use Test::More tests => 6;
+use Test::More tests => 9;
 
 my ($output, $err) = PackedTest->run;
 
@@ -48,5 +48,9 @@ like $output, qr/^not ok \d+ - \[\d+\] sync-only - lives_ok$/m;
 #like $err, qr/^# \[\d+\] ae\.timer: \$c->done is not invoked \(or \|die\|d within test\?\)/m;
 #like $err, qr/^# \[\d+\] ae\.timer: Looks like you planned 1 test but ran 0\.$/m;
 like $err, qr/Undefined subroutine &main::hoge called at .+?died.t line 31/;
+like $err, qr/Failed test '\[\d+\] sync-only - lives_ok'\s+#\s+at .*?died.t line 33/;
+
 like $err, qr/^# Looks like you /m;
+like $err, qr/^# Looks like your test exited with 255 /m;
 like $err, qr/Possible memory leak detected/;
+unlike $err, qr/X1.pm/;
