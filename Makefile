@@ -1,11 +1,14 @@
-# -*- Makefile -*-
-
 all:
 
-## ------ Setup ------
-
+CURL = curl
 WGET = wget
 GIT = git
+
+updatenightly: local/bin/pmbp.pl
+	perl local/bin/pmbp.pl --update
+	$(GIT) add config
+
+## ------ Setup ------
 
 deps: git-submodules pmbp-install
 
