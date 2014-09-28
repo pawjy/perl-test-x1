@@ -28,7 +28,7 @@ run_tests;
 
 !!1;
 
-use Test::More tests => 3;
+use Test::More tests => 4;
 
 my ($output, $err) = PackedTest->run;
 
@@ -37,5 +37,6 @@ not ok 1 - [1] - lives_ok
 ok 2 # skip
 };
 
-like $err, qr{got: 'Test: Timeout \(1\)'};
+like $err, qr{at .+?timeout.t line 25.\s+#\s+got: 'Test: Timeout \(1\)'};
 like $err, qr{Possible memory leak detected}; # $c is referenced by $timer
+unlike $err, qr/X1.pm/;

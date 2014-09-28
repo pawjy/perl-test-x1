@@ -21,7 +21,7 @@ run_tests;
 
 !!1;
 
-use Test::More tests => 5;
+use Test::More tests => 6;
 
 my ($output, $err) = PackedTest->run;
 
@@ -32,3 +32,4 @@ like $output, qr/^not ok \d+ - \[\d+\] sync-only - lives_ok$/m;
 like $err, qr/Undefined subroutine &main::hoge called at .+?died-sync-only.t line /;
 like $err, qr/^# Looks like you /m;
 unlike $err, qr/Possible memory leak detected/;
+unlike $err, qr/X1.pm/;
