@@ -51,6 +51,6 @@ like $err, qr/Undefined subroutine &main::hoge called at .+?died.t line 31/;
 like $err, qr/Failed test '\[\d+\] sync-only - lives_ok'\s+#\s+at .*?died.t line 33/;
 
 like $err, qr/^# Looks like you /m;
-like $err, qr/^# Looks like your test exited with 255 /m;
+like $err, qr/^# Looks like your test exited with /m;
 like $err, qr/Possible memory leak detected/;
 unlike $err, qr/X1.pm/;
