@@ -3,7 +3,7 @@ use strict;
 use warnings;
 no warnings 'utf8';
 use warnings FATAL => 'recursion';
-our $VERSION = '3.0';
+our $VERSION = '4.0';
 use AnyEvent;
 push our @CARP_NOT, qw(Test::X1::Manager);
 
@@ -321,6 +321,7 @@ sub run_tests {
                     $schedule_test->();
                     delete $context->{received_data};
                     undef $context;
+                    undef $run_timer;
                 };
             });
         } else {
