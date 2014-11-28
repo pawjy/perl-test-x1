@@ -235,7 +235,7 @@ sub run_tests {
             my $run_timer;
             $run_test = sub {
                 $run_timer = AE::timer $run_timeout, 0, sub {
-                    unless ($context->{done}) {
+                    if (defined $context and not $context->{done}) {
                         $context->receive_exception("Test: Timeout ($run_timeout)");
                         $context->done;
                     }
