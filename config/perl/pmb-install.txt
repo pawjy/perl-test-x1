@@ -1,5 +1,5 @@
 Test::More~1.001014
-Scalar::Util~1.41
+Scalar::Util~1.42
 parent~0.232
 Filter::Util::Call~1.54
 Term::ANSIColor~4.03
