@@ -3,7 +3,7 @@ use strict;
 use warnings;
 no warnings 'utf8';
 use warnings FATAL => 'recursion';
-our $VERSION = '4.0';
+our $VERSION = '5.0';
 use AnyEvent;
 push our @CARP_NOT, qw(Test::X1::Manager);
 
@@ -82,6 +82,18 @@ sub test_method_regexp {
     }
 }
 
+sub test_method_excluded_regexp {
+    my $self = shift;
+    return $self->{test_method_excluded_regexp}
+        if exists $self->{test_method_excluded_regexp};
+    my $tm = $ENV{TEST_METHOD_EXCLUDED};
+    if (defined $tm) {
+        return $self->{test_method_excluded_regexp} = qr/$tm/;
+    } else {
+        return $self->{test_method_excluded_regexp} = undef;
+    }
+}
+
 sub define_test {
     my $self = shift;
 
@@ -92,11 +104,13 @@ sub define_test {
     $args{id} = $self->{next_test_number}++;
 
     my $methods = $self->test_method_regexp;
-    if ($methods) {
+    my $methods_x = $self->test_method_excluded_regexp;
+    if (defined $methods or defined $methods_x) {
         my $context_class = ref $self;
         $context_class =~ s/::Manager$/::Context/;
         my $name = $context_class->test_name(\%args);
-        return unless $name =~ /$methods/;
+        return if defined $methods and not $name =~ /$methods/;
+        return if defined $methods_x and $name =~ /$methods_x/;
     }
 
     if (Carp::shortmess =~ / at (.+) line ([0-9]+)\.?$/s) {
