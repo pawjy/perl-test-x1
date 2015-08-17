@@ -55,10 +55,10 @@ Test::X1 - A lightweight test manager
 
 =head1 DESCRIPTION
 
-The C<Test::X1> module defines a simple, lightweight test management
-framework for L<Test::Builder>-based tests.  It supports automatic
-naming of tests, partial execution, concurrent execution, and other
-useful features.
+The C<Test::X1> module defines a simple, lightweight, and
+L<AnyEvent>-compatible test management framework for
+L<Test::Builder>-based tests.  It supports automatic naming of tests,
+partial execution, concurrent execution, and other useful features.
 
 =head1 USAGE
 
@@ -119,6 +119,11 @@ The C<TEST_METHOD> environment variable can be used to specify the
 regular expression used to filter the tests to run by their names.  If
 the environment variable is not set, all tests are executed.
 Otherwise, only the tests whose name matches the pattern are executed.
+
+The C<TEST_METHOD_EXCLUDED> environment variable can be used to
+specify the regular expression used to filter the tests to I<not> run
+by their names.  If the environment variable is not set, no test is
+excluded.
 
 See also L</Naming> for how names are handled and used by the module.
 
@@ -309,9 +314,10 @@ multiple tests by iteration:
 
 If the name is represented as an array reference, its items are joined
 by C<.> (period) before actually used to output results, or filter
-tests by environment variables, i.e. C<TEST_METHOD> and
-C<TEST_BLOCK_SKIP>.  Any empty string is replaced by C<(empty)> and
-any C<undef> value is replaced by C<(undef)>.
+tests by environment variables, i.e. C<TEST_METHOD>,
+C<TEST_METHOD_EXCLUDED>, and C<TEST_BLOCK_SKIP>.  Any empty string is
+replaced by C<(empty)> and any C<undef> value is replaced by
+C<(undef)>.
 
 =head2 Waiting for a condvar
 
@@ -750,7 +756,7 @@ C<Test::Class>, C<Test::More>.
 
 Copyright 2012-2013 Hatena <http://www.hatena.ne.jp/>.
 
-Copyright 2012-2014 Wakaba <wakaba@suikawiki.org>.
+Copyright 2012-2015 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
