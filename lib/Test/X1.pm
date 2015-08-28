@@ -245,7 +245,7 @@ sub run_tests {
                 },
                 %$context_args,
             );
-            my $run_timeout = $test->[1]->{timeout} || 30;
+            my $run_timeout = $test->[1]->{timeout} || 60;
             my $run_timer;
             $run_test = sub {
                 $run_timer = AE::timer $run_timeout, 0, sub {
