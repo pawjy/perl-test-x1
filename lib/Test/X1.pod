@@ -732,7 +732,7 @@ See C<t/*.t> for more examples.
 
 =head1 DEPENDENCY
 
-This module requires Perl 5.8 or later.  In addition to core modules,
+This module requires Perl 5.10 or later.  In addition to core modules,
 this module depends on L<Exporter::Lite> and L<AnyEvent>.
 
 =head1 DEVELOPMENT
