@@ -41,5 +41,5 @@ is $output, q{1..0
 
 is $err, q{# [1]: No subtests run!
 # [3]: No subtests run!
-# No tests run!
 };
+# "# No tests run!"

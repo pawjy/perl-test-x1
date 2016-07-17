@@ -14,12 +14,12 @@ run_tests;
 
 !!1;
 
-use Test::More tests => 2;
+use Test::More tests => 1;
 
 my ($output, $err) = PackedTest->run;
 
 is $output, q{1..0
 };
 
-is $err, q{# No tests run!
-};
+#is $err, q{# No tests run!
+#};
