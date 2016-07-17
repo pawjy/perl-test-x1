@@ -34,6 +34,8 @@ PROVE = ./prove
 test: test-deps test-main
 
 test-deps: deps
+	./perl -MTest::Builder -e 'print $Test::Builder::VERSION, "\n"'
+	./perl -MTest::More -e 'print $Test::More::VERSION, "\n"'
 
 test-main:
 	$(PROVE) t/*.t
