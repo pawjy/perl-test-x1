@@ -32,14 +32,13 @@ run_tests;
 
 !!1;
 
-use Test::More tests => 2;
+use Test::More tests => 3;
 
 my ($output, $err) = PackedTest->run;
 
 is $output, q{1..0
 };
 
-is $err, q{# [1]: No subtests run!
-# [3]: No subtests run!
-};
+like $err, qr{# \[1\]: No subtests run!}m;
+like $err, qr{# \[3\]: No subtests run!}m;
 # "# No tests run!"
