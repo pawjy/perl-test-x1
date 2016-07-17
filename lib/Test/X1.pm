@@ -51,7 +51,7 @@ sub define_functions ($) {
         }
 
         1;
-    }, ($CLASS) x 10 or die $@;
+    }, ($CLASS) x 9 or die $@;
 }
 
 Test::X1::define_functions(__PACKAGE__);
@@ -417,10 +417,17 @@ sub DESTROY {
 }
 
 package Test::X1::Context;
+use Scalar::Util qw(weaken);
 
 sub new {
     my $class = shift;
-    return bless {@_, pid => $$}, $class;
+    require AE;
+    my $self = bless {@_, signals => [], pid => $$}, $class;
+    weaken (my $s = $self);
+    push @{$self->{signals}}, AE::signal (TERM => sub { $s->onterminate ('TERM') });
+    push @{$self->{signals}}, AE::signal (INT => sub { $s->onterminate ('INT') });
+    push @{$self->{signals}}, AE::signal (QUIT => sub { $s->onterminate ('QUIT') });
+    return $self;
 }
 
 sub test_name {
@@ -529,6 +536,7 @@ sub done {
         $self->diag(undef, 'No subtests run!');
     }
 
+    delete $self->{signals};
     $self->{done} = 1;
     $self->{cb}->($self) if $self->{cb};
 
@@ -550,6 +558,13 @@ sub done {
         $self->{cv}->send;
     }
 }
+
+sub onterminate ($$) {
+  my ($self, $type) = @_;
+  $self->diag (undef, "Terminated by SIG$type");
+  delete $self->{signals};
+  AE::postpone (sub { exit });
+} # onterminate
 
 sub DESTROY {
     my $self = shift;
