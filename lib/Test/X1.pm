@@ -51,7 +51,7 @@ sub define_functions ($) {
         }
 
         1;
-    }, ($CLASS) x 10 or die $@;
+    }, ($CLASS) x 9 or die $@;
 }
 
 Test::X1::define_functions(__PACKAGE__);
