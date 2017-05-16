@@ -59,9 +59,9 @@ my ($output, $err) = PackedTest->run;
 is $output, q{1..2
 ok 1 - [2] - [1]
 not ok 2 - [1] - lives_ok
-ok 3 # skip
+not ok 3 - [2] - lives_ok
 not ok 4 - [2] - lives_ok
-not ok 5 - [2] - lives_ok
+not ok 5 - No skipped tests
 };
 
 like $err, qr{got: 'context_begin: Timeout \(1\.2\)'};

@@ -26,18 +26,16 @@ run_tests;
 
 !!1;
 
-use Test::More tests => 7;
+use Test::More tests => 3;
 
 local $ENV{TEST_BLOCK_SKIP} = 'foo';
 my ($output, $err) = PackedTest->run;
 
-like $output, qr/^1\.\.2$/m;
-
-unlike $output, qr/^ok \d+ - \[1\] hoge - \[\d+\] foo\.\d+$/m;
-like $output, qr/^ok \d+ - \[1\] hoge - \[\d+\] bar$/m;
-like $output, qr/^ok \d+ \# skip$/m;
+is $output, q{1..2
+ok 1 # skip
+ok 2 - [1] hoge - [1] bar
+not ok 3 - No skipped tests
+};
 
 like $err, qr/^# \[1\] hoge - foo - subtests skipped\.$/m;
 like $err, qr/^# \[1\] hoge: Looks like you planned 2 tests but ran 1\.$/m;
-
-unlike $output, qr/^not ok/m;

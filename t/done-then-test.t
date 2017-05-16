@@ -48,5 +48,5 @@ like $err, qr/^# \[\d+\] ae.timer - \[1\]: A subtest occurs after \$c->done is c
 like $output, qr/^ok \d+ - \[\d+\] sync-only - \[1\]$/m;
 like $err, qr/^# \[\d+\] sync-only - \[2\]: A subtest occurs after \$c->done is called\.$/m;
 
-like $err, qr/^# Looks like you planned 3 tests but ran 5\.$/m;
+like $err, qr/^# Looks like you planned 3 tests but ran 4\.$/m;
 like $err, qr/^# Looks like you skipped 2 tests\.$/m;

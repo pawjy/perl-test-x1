@@ -367,12 +367,14 @@ sub run_tests {
         $cv->recv;
     }
 
+    if ($skipped_tests) {
+      local $Test::Builder::Level = $Test::Builder::Level + 2;
+      Test::More::is $skipped_tests, 0, "No skipped tests";
+      $self->diag(undef, sprintf "Looks like you skipped %d test%s.",
+                             $skipped_tests, $skipped_tests == 1 ? '' : 's');
+    }
     Test::More::done_testing()
             unless $test_count and not $more_tests;
-    if ($skipped_tests) {
-        $self->diag(undef, sprintf "Looks like you skipped %d test%s.",
-                               $skipped_tests, $skipped_tests == 1 ? '' : 's');
-    }
     undef $self;
 }
 
@@ -524,7 +526,7 @@ sub done {
     if (defined $self->{args}->{n}) {
         if ($self->{args}->{n} != $done_tests) {
             if ($self->{args}->{n} > $done_tests) {
-                Test::More->builder->skip for 1..($self->{args}->{n} - $done_tests);
+                #Test::More->builder->skip for 1..($self->{args}->{n} - $done_tests);
                 $self->{skipped_tests} += ($self->{args}->{n} - $done_tests);
             }
             $self->diag(undef, sprintf "Looks like you planned %d test%s but ran %d.",
@@ -586,3 +588,14 @@ sub DESTROY {
 }
 
 1;
+
+=head1 LICENSE
+
+Copyright 2012-2013 Hatena <https://www.hatena.ne.jp/>.
+
+Copyright 2012-2017 Wakaba <wakaba@suikawiki.org>.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut

@@ -43,9 +43,9 @@ sub run {
         '>' => \my $output,
         '2>' => \my $err,
     ;
-    $cv->recv;
+    my $result = $cv->recv;
 
-    return ($output, $err);
+    return ($output, $err, $result);
 }
 
 1;
