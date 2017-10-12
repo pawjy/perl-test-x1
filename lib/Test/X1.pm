@@ -294,6 +294,7 @@ sub run_tests {
                         $cv->end; # (a)
                         $context->done;
                         undef $wait_timer;
+                        $test_cb_old->(@_) if $test_cb_old;
                         return;
                     }
                     if (UNIVERSAL::can($context->{received_data}, 'context_begin')) {
@@ -304,6 +305,7 @@ sub run_tests {
                             $cv->end; # (a)
                             $context->done;
                             undef $wait_timer;
+                            $test_cb_old->(@_) if $test_cb_old;
                         };
                         $context->{received_data}->context_begin(sub {
                             return unless $wait_timer;

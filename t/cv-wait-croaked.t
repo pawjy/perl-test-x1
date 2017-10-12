@@ -13,19 +13,24 @@ use Test::More;
 use AnyEvent;
 
 my $cv = AE::cv;
-$cv->croak ("abc");
+{
+    my $timer; $timer = AE::timer 1, 0, sub {
+        $cv->croak ("abc");
+        undef $timer;
+    };
+}
 
 test {
     my $c = shift;
     ok not 1;
     done $c;
-} n => 1, wait => {cv => $cv}, name => "hashed wait";
+} n => 1, wait => {cv => $cv}, name => "wait";
 
 test {
     my $c = shift;
     ok not 1;
     done $c;
-} n => 1, wait => $cv, name => "cv wait";
+} n => 1, wait => $cv, name => "wait";
 
 run_tests;
 
@@ -35,12 +40,12 @@ use Test::More tests => 4;
 
 my ($output, $err) = PackedTest->run;
 
-is $output, q{1..2
-not ok 1 - [1] hashed wait - lives_ok
-not ok 2 - [2] cv wait - lives_ok
+like $output, qr{^1..2
+not ok 1 - ... wait - lives_ok
+not ok 2 - ... wait - lives_ok
 not ok 3 - No skipped tests
-};
+$};
 
 like $err, qr{got: 'Wait: failed \(abc at .+?\)'}s;
-like $err, qr{got: 'Wait: failed \(abc at .+?\)'}s;
+like $err, qr{Wait: failed.+?got: 'Wait: failed \(abc at .+?\)'}s;
 unlike $err, qr{Possible memory leak detected}; # $c is referenced by $timer
