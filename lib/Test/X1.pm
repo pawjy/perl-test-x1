@@ -286,7 +286,16 @@ sub run_tests {
                 };
                 my $test_cb_old = $wait->cb;
                 $wait->cb(sub {
-                    $context->{received_data} = $_[0]->recv;
+                    eval {
+                        $context->{received_data} = $_[0]->recv;
+                    };
+                    if ($@) {
+                        $context->receive_exception("Wait: failed ($@)");
+                        $cv->end; # (a)
+                        $context->done;
+                        undef $wait_timer;
+                        return;
+                    }
                     if (UNIVERSAL::can($context->{received_data}, 'context_begin')) {
                         my $args = [@_];
                         return unless $wait_timer;
