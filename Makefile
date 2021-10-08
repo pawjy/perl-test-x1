@@ -7,6 +7,7 @@ GIT = git
 updatenightly: local/bin/pmbp.pl
 	perl local/bin/pmbp.pl --update
 	$(GIT) add config
+	$(CURL) -sSLf https://raw.githubusercontent.com/wakaba/ciconfig/master/ciconfig | RUN_GIT=1 REMOVE_UNUSED=1 perl
 
 ## ------ Setup ------
 
@@ -17,7 +18,7 @@ git-submodules:
 
 local/bin/pmbp.pl:
 	mkdir -p local/bin
-	$(WGET) -O $@ https://raw.github.com/wakaba/perl-setupenv/master/bin/pmbp.pl
+	$(WGET) -O $@ https://raw.githubusercontent.com/wakaba/perl-setupenv/master/bin/pmbp.pl
 pmbp-upgrade: local/bin/pmbp.pl
 	perl local/bin/pmbp.pl --update-pmbp-pl
 pmbp-update: git-submodules pmbp-upgrade
@@ -39,3 +40,5 @@ test-deps: deps
 
 test-main:
 	$(PROVE) t/*.t
+
+## License: Public Domain.
