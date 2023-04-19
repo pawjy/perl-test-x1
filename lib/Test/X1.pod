@@ -735,22 +735,18 @@ See C<t/*.t> for more examples.
 This module requires Perl 5.10 or later.  In addition to core modules,
 this module depends on L<Exporter::Lite> and L<AnyEvent>.
 
-=head1 DEVELOPMENT
-
-Latest version of this module is available in the GitHub repository:
-<https://github.com/wakaba/perl-test-x1>.
-
-Tests are automatically run by Travis CI
-<https://travis-ci.org/wakaba/perl-test-x1>.
-
 =head1 AUTHOR
 
 Wakaba <wakaba@suikawiki.org>.
 
-=head1 ACKNOWLEDGEMENTS
+=head1 HISTORY
 
 This module is inspired by following modules: C<Test::Builder>,
 C<Test::Class>, C<Test::More>.
+
+This repository was located at
+<https://github.com/wakaba/perl-test-x1> until 19 April 2023, then
+transferred to <https://github.com/pawjy/perl-test-x1>.
 
 =head1 LICENSE
 
