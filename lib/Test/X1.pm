@@ -229,6 +229,7 @@ sub run_tests {
     my $context_class = ref $self;
     $context_class =~ s/::Manager$/::Context/;
 
+    my @summary;
     my @test = @{$self->{tests}};
     $schedule_test = sub {
         if (@test) {
@@ -344,6 +345,7 @@ sub run_tests {
             $test_cv->cb(sub {
                 AE::postpone {
                     $schedule_test->();
+                    push @summary, $context->_final_summary;
                     delete $context->{received_data};
                     undef $context;
                     undef $run_timer;
@@ -378,16 +380,25 @@ sub run_tests {
         $cv->recv;
     }
 
-    if ($skipped_tests) {
-      local $Test::Builder::Level = $Test::Builder::Level + 2;
-      Test::More::is $skipped_tests, 0, "No skipped tests";
-      $self->diag(undef, sprintf "Looks like you skipped %d test%s.",
+  if ($skipped_tests) {
+    local $Test::Builder::Level = $Test::Builder::Level + 2;
+    Test::More::is $skipped_tests, 0, "No skipped tests";
+    $self->diag(undef, sprintf "Looks like you skipped %d test%s.",
                              $skipped_tests, $skipped_tests == 1 ? '' : 's');
+  }
+  Test::More::done_testing() unless $test_count and not $more_tests;
+  {
+    my @failed;
+    for my $sum (@summary) {
+      next if $sum->{ok};
+      push @failed, $sum->{id};
     }
-    Test::More::done_testing()
-            unless $test_count and not $more_tests;
-    undef $self;
-}
+    if (@failed) {
+      $self->diag(undef, sprintf "Failed: %s", join ' ', map { "[$_]" } @failed);
+    }
+  }
+  undef $self;
+} # run_tests
 
 sub default_test_wait_cv {
     return undef;
@@ -507,6 +518,7 @@ sub _subtest_failed ($$$$) {
       q{Test::More::is($v1, $v2, $self->test_name . ' - ' . $name);};
   eval $code;
   die $@ if $@;
+  $self->{_failed} = 1;
 } # _subtest_failed
 
 sub received_data {
@@ -579,6 +591,15 @@ sub onterminate ($$) {
   AE::postpone (sub { exit });
 } # onterminate
 
+sub _final_summary ($) {
+  my $self = $_[0];
+  if ($self->{done} and not $self->{failed_tests}) {
+    return {ok => 1};
+  } else {
+    return {ng => 1, id => $self->{args}->{id}};
+  }
+} # _final_summary
+
 sub DESTROY {
     my $self = shift;
     return unless ($self->{pid} || 0) == $$;
@@ -604,7 +625,7 @@ sub DESTROY {
 
 Copyright 2012-2013 Hatena <https://www.hatena.ne.jp/>.
 
-Copyright 2012-2017 Wakaba <wakaba@suikawiki.org>.
+Copyright 2012-2024 Wakaba <wakaba@suikawiki.org>.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
