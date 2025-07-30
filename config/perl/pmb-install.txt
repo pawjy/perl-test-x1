@@ -1,7 +1,7 @@
 AnyEvent~7.17
 Carp~1.50
 Filter::Util::Call~1.64
-Scalar::Util~1.69
+Scalar::Util~1.70
 Term::ANSIColor~5.01
 Term::Table~0.024
 Test::More~1.302214
